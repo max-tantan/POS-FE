@@ -5,18 +5,52 @@ import { useRouter } from 'vue-router'
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
 const productTypes = ['Makanan', 'Minuman', 'Snack', 'Lainnya']
+const ordersStorageKey = 'sarapantelur.orders'
+const nextOrderStorageKey = 'sarapantelur.nextOrderNumber'
 const today = new Date().toISOString().slice(0, 10)
-const userRole = ref(localStorage.getItem('userRole') ?? '')
-const isAdmin = computed(() => userRole.value === 'admin')
-const isCustomer = computed(() => userRole.value === 'customer')
+const isAdmin = computed(() => false)
+const isCustomer = computed(() => true)
 const router = useRouter()
 
-const orders = ref([])
+const parseStoredOrders = () => {
+  try {
+    const raw = localStorage.getItem(ordersStorageKey)
+    if (!raw) {
+      return []
+    }
+    
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const inferNextOrderNumber = (orderList) => {
+  const highest = orderList.reduce((max, order) => {
+    const match = String(order?.id ?? '').match(/#ORD-(\d+)/)
+    if (!match) {
+      return max
+    }
+
+    return Math.max(max, Number(match[1]))
+  }, 1036)
+  return highest + 1
+}
+
+const storedOrders = parseStoredOrders()
+const parsedStoredNext = Number(localStorage.getItem(nextOrderStorageKey))
+
+const orders = ref(storedOrders)
 const searchQuery = ref('')
 const activeStatus = ref('Semua')
 const activePeriod = ref('Semua')
 const selectedOrderId = ref(null)
-const nextOrderNumber = ref(1037)
+const nextOrderNumber = ref(
+  Number.isFinite(parsedStoredNext) && parsedStoredNext >= 1000
+    ? Math.max(parsedStoredNext, inferNextOrderNumber(storedOrders))
+    : inferNextOrderNumber(storedOrders),
+)
 const formMode = ref('create')
 const editingOrderId = ref(null)
 const formError = ref('')
@@ -66,7 +100,7 @@ const menuOptions = ref([
 const customerOrderNumber = ref('')
 
 const productForm = reactive({
-  name: 'Produk Baru',
+  name: '',
   type: productTypes[0],
   price: 10000,
   image: '',
@@ -258,6 +292,18 @@ watch(
   },
   { deep: true, immediate: true },
 )
+
+watch(
+  orders,
+  (value) => {
+    localStorage.setItem(ordersStorageKey, JSON.stringify(value))
+  },
+  { deep: true },
+)
+
+watch(nextOrderNumber, (value) => {
+  localStorage.setItem(nextOrderStorageKey, String(value))
+})
 
 const resetForm = () => {
   form.customer = ''
@@ -723,216 +769,7 @@ resetForm()
       </div>
     </header>
 
-    <div v-if="isAdmin" class="stats-grid">
-      <article v-for="item in stats" :key="item.id" class="stat-card">
-        <p class="stat-label">{{ item.label }}</p>
-        <p class="stat-value">{{ item.value }}</p>
-        <p class="stat-meta">Data mengikuti filter aktif</p>
-      </article>
-    </div>
-
-    <div v-if="isAdmin" class="content-grid">
-      <section class="table-card">
-        <div class="table-toolbar">
-          <input
-            v-model="searchQuery"
-            class="search"
-            type="text"
-            :placeholder="isAdmin ? 'Cari order, pelanggan, atau menu' : 'Cari order atau menu'"
-          />
-          <div v-if="isAdmin" class="table-actions">
-            <button
-              v-for="status in statusFilters"
-              :key="status"
-              class="btn btn-soft small"
-              :class="{ active: activeStatus === status }"
-              @click="activeStatus = status"
-            >
-              {{ status }}
-          </button>
-          </div>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID Order</th>
-                <th>Pelanggan</th>
-                <th>Menu</th>
-                <th>Qty</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Waktu</th>
-                <th v-if="isAdmin">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="order in filteredOrders"
-                :key="order.id"
-                class="row-click"
-                :class="{ selected: selectedOrder?.id === order.id }"
-                @click="selectedOrderId = order.id"
-              >
-                <td class="order-id">{{ order.id }}</td>
-                <td>{{ order.customer }}</td>
-                <td class="menu-col">{{ order.menu }}</td>
-                <td>{{ order.qty }}</td>
-                <td>{{ formatRupiah(order.totalAmount) }}</td>
-                <td>
-                  <span class="badge" :class="statusClass(order.status)">
-                    {{ order.status }}
-                  </span>
-                </td>
-                <td>{{ order.time }}</td>
-                <td v-if="isAdmin">
-                  <div class="row-actions">
-                    <button
-                      class="btn btn-success xsmall"
-                      :disabled="order.status === 'Selesai' || order.status === 'Dibatalkan'"
-                      @click.stop="advanceOrderStatus(order.id)"
-                    >
-                      {{ order.status === 'Diproses' ? 'Kirim' : 'Selesaikan' }}
-                    </button>
-                    <button class="btn btn-soft xsmall" @click.stop="openEditForm(order)">Edit</button>
-                    <button
-                      class="btn btn-warning xsmall"
-                      :disabled="order.status === 'Dibatalkan' || order.status === 'Selesai'"
-                      @click.stop="cancelOrder(order.id)"
-                    >
-                      Batalkan
-                    </button>
-                    <button class="btn btn-danger xsmall" @click.stop="deleteOrder(order.id)">Hapus</button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="!filteredOrders.length">
-                <td :colspan="isAdmin ? 8 : 7" class="empty">Belum ada order. Buat pesanan dari form di kanan.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <aside class="side-panel">
-        <section class="side-card highlight" v-if="selectedOrder">
-          <p class="side-label">Order Dipilih</p>
-          <p class="side-big">{{ selectedOrder.id }}</p>
-          <p class="side-sub">
-            {{ selectedOrder.customer }} • {{ selectedOrder.qty }} item • {{ formatRupiah(selectedOrder.totalAmount) }}
-          </p>
-          <span class="badge" :class="statusClass(selectedOrder.status)">{{ selectedOrder.status }}</span>
-          <div v-if="isAdmin" class="detail-actions">
-            <button
-              class="btn btn-success"
-              :disabled="selectedOrder.status === 'Selesai' || selectedOrder.status === 'Dibatalkan'"
-              @click="advanceOrderStatus(selectedOrder.id)"
-            >
-              {{ selectedOrder.status === 'Diproses' ? 'Kirim Order' : 'Selesaikan Order' }}
-            </button>
-            <button class="btn btn-soft" @click="openEditForm(selectedOrder)">Edit Order</button>
-            <button
-              class="btn btn-warning"
-              :disabled="selectedOrder.status === 'Dibatalkan' || selectedOrder.status === 'Selesai'"
-              @click="cancelOrder(selectedOrder.id)"
-            >
-              Batalkan Order
-            </button>
-            <button class="btn btn-danger" @click="deleteOrder(selectedOrder.id)">Hapus Order</button>
-          </div>
-        </section>
-
-        <section class="side-card" v-if="selectedOrder">
-          <h2>Timeline</h2>
-          <ul class="timeline">
-            <li v-for="item in selectedOrder.timeline" :key="item.id">
-              <div>
-                <p>{{ item.text }}</p>
-                <span>{{ item.meta }}</span>
-              </div>
-            </li>
-          </ul>
-        </section>
-
-        <section class="side-card">
-          <h2>{{ isAdmin ? (formMode === 'create' ? 'Tambah Order Cepat' : 'Edit Order') : 'Form Pesanan' }}</h2>
-          <form class="order-form" @submit.prevent="saveOrder">
-            <label>
-              Customer
-              <input v-model="form.customer" type="text" placeholder="Nama customer" />
-            </label>
-
-            <div class="multi-menu-panel">
-              <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
-              <div class="multi-menu-grid">
-                <div
-                  v-for="option in menuOptions"
-                  :key="option.name"
-                  class="menu-option-card"
-                  :class="{ selected: selectedMenus.includes(option.name) }"
-                >
-                  <div class="menu-option-main">
-                    <div v-if="option.image" class="menu-option-thumb-wrap">
-                      <img class="menu-option-thumb" :src="option.image" :alt="option.name" />
-                    </div>
-                    <div v-else class="menu-option-thumb empty">No Image</div>
-
-                    <div class="menu-option-meta">
-                      <p class="menu-option-name">{{ option.name }}</p>
-                      <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
-                      <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
-                    </div>
-                  </div>
-
-                  <div class="menu-option-controls">
-                    <label class="menu-check-label">
-                      <input
-                        class="menu-option-check"
-                        type="checkbox"
-                        :checked="selectedMenus.includes(option.name)"
-                        @change="toggleMenuSelection(option.name, $event.target.checked)"
-                      />
-                      <span>Pilih</span>
-                    </label>
-                    <input
-                      v-if="selectedMenus.includes(option.name)"
-                      class="qty-inline"
-                      type="number"
-                      min="1"
-                      :value="menuQtyDraft[option.name] ?? 1"
-                      @input="setMenuQuantity(option.name, $event.target.value)"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="auto-summary">
-              <p>
-                Total otomatis:
-                <strong>{{ formatRupiah(estimatedTotal) }}</strong>
-              </p>
-              <p>
-                Total item:
-                <strong>{{ estimatedTotalQty }}</strong>
-              </p>
-              <p>Status default order baru: <strong>Diproses</strong></p>
-            </div>
-            <p v-if="formError" class="form-error">{{ formError }}</p>
-
-            <div class="form-actions">
-              <button v-if="isAdmin" type="button" class="btn btn-soft" @click="openCreateForm">Reset</button>
-              <button type="submit" class="btn btn-primary">
-                {{ isCustomer ? 'Buat Pesanan' : formMode === 'create' ? 'Simpan Order' : 'Update Order' }}
-              </button>
-            </div>
-          </form>
-        </section>
-      </aside>
-    </div>
-
-    <div v-else class="customer-content">
+    <div class="customer-content">
       <section class="customer-card">
         <h2>Menu Hari Ini</h2>
         <p class="customer-note">Pilih menu favorit kamu, lalu isi form pesanan di bawah.</p>
@@ -1030,81 +867,6 @@ resetForm()
       </section>
     </div>
 
-    <div v-if="isAdmin && showProductForm" class="product-modal-backdrop" @click.self="closeProductForm">
-      <section class="product-modal">
-        <div class="product-modal-header">
-          <h2>Kelola Produk</h2>
-          <button type="button" class="btn btn-danger xsmall" @click="closeProductForm">X</button>
-        </div>
-
-        <form class="order-form" @submit.prevent="createProduct">
-          <label>
-            Nama Produk
-            <input v-model="productForm.name" type="text" />
-          </label>
-          <label>
-            Jenis Produk
-            <select v-model="productForm.type">
-              <option v-for="type in productTypes" :key="type" :value="type">{{ type }}</option>
-            </select>
-          </label>
-          <label>
-            Harga Produk
-            <input v-model.number="productForm.price" type="number" min="1000" />
-          </label>
-          <label>
-            Foto Produk
-            <input :key="productImageInputKey" class="product-image-input" type="file" accept="image/*" @change="onProductImageChange" />
-          </label>
-          <div v-if="productForm.image" class="product-image-preview">
-            <img :src="productForm.image" alt="Preview foto produk" />
-          </div>
-          <p v-if="productFormError" class="form-error">{{ productFormError }}</p>
-          <div class="form-actions">
-            <button type="button" class="btn btn-soft" @click="resetProductForm">Reset</button>
-            <button type="submit" class="btn btn-primary">Simpan Produk</button>
-          </div>
-        </form>
-
-        <ul class="product-list">
-          <li v-for="(menu, index) in menuOptions" :key="menu.name">
-            <div v-if="menuEditIndex !== index" class="product-row">
-              <div>
-                <p class="menu-name">{{ menu.name }}</p>
-                <p class="menu-type">{{ menu.type || 'Lainnya' }} • {{ formatRupiah(menu.price) }}</p>
-              </div>
-              <div class="menu-option-actions">
-                <button type="button" class="btn btn-soft xsmall" @click="beginEditMenuOption(index)">Edit</button>
-                <button type="button" class="btn btn-danger xsmall" @click="removeMenuOption(index)">Hapus</button>
-              </div>
-            </div>
-
-            <div v-else class="product-edit-grid">
-              <input v-model="menuEditDraft.name" type="text" />
-              <select v-model="menuEditDraft.type">
-                <option v-for="type in productTypes" :key="`edit-${type}`" :value="type">{{ type }}</option>
-              </select>
-              <input v-model.number="menuEditDraft.price" type="number" min="1000" />
-              <input :key="editImageInputKey" class="product-image-input" type="file" accept="image/*" @change="onEditImageChange" />
-              <div v-if="menuEditDraft.image" class="product-image-preview product-image-preview-small">
-                <img :src="menuEditDraft.image" alt="Preview foto edit produk" />
-              </div>
-              <p v-if="menuEditError" class="form-error product-edit-error">{{ menuEditError }}</p>
-              <div class="menu-option-actions">
-                <button type="button" class="btn btn-success xsmall" @click="saveEditMenuOption">Simpan</button>
-                <button
-                  type="button"
-                  class="btn btn-soft xsmall"
-                  @click="cancelEditMenuOption"
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </section>
-    </div>
   </section>
 </template>
 
@@ -1116,7 +878,7 @@ resetForm()
 }
 
 .page-header {
-  background: linear-gradient(135deg, #173c5e, #1c5a7e);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 20px;
   padding: 24px;
@@ -1216,7 +978,7 @@ h1 {
 }
 
 .stat-card {
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 16px;
   padding: 16px;
@@ -1253,7 +1015,7 @@ h1 {
 }
 
 .customer-card {
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
   padding: 16px;
@@ -1275,7 +1037,7 @@ h1 {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.22);
-  background: #0f2a41;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
 }
 
 .menu-card img {
@@ -1313,7 +1075,7 @@ h1 {
 
 .table-card,
 .side-card {
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
 }
@@ -1521,7 +1283,7 @@ h2 {
 .order-form select {
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
-  background: #0f2a41;
+  background: #18242f;
   color: #dbe9f5;
   padding: 10px 12px;
 }
@@ -1747,7 +1509,7 @@ h2 {
 .product-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.62);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   backdrop-filter: blur(2px);
   display: grid;
   place-items: center;
@@ -1759,7 +1521,7 @@ h2 {
   width: min(760px, 100%);
   max-height: 90vh;
   overflow: auto;
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 16px;
   padding: 16px;
@@ -1786,7 +1548,7 @@ h2 {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 10px;
   padding: 10px;
-  background: rgba(15, 42, 65, 0.42);
+  background: rgba(30, 41, 59, 0.7);
 }
 
 .product-row {
@@ -1807,7 +1569,7 @@ h2 {
   grid-column: 1 / span 3;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
-  background: #0f2a41;
+  background: #152532;
   color: #dbe9f5;
   padding: 6px;
   font-size: 12px;

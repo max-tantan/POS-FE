@@ -1,14 +1,15 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const isSidebarOpen = ref(true)
 const isMobile = ref(false)
 const route = useRoute()
+const router = useRouter()
 
 const menus = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', to: '/dashboard' },
-  { id: 'order', label: 'Order', icon: 'OR', to: '/order' },
+  { id: 'order', label: 'Order', icon: 'OR', to: '/order-admin' },
 ]
 
 const selectMenu = () => {
@@ -18,6 +19,13 @@ const selectMenu = () => {
 }
 
 const isActive = (path) => route.path === path
+
+const logout = () => {
+  localStorage.removeItem('userRole')
+  localStorage.removeItem('isLoggedIn')
+  isSidebarOpen.value = false
+  router.push('/login')
+}
 
 const syncSidebarByScreen = () => {
   isMobile.value = window.innerWidth <= 900
@@ -68,6 +76,10 @@ onBeforeUnmount(() => {
           </RouterLink>
         </li>
       </ul>
+
+      <button class="logout-btn" type="button" @click="logout">
+        Logout
+      </button>
     </aside>
   </div>
 </template>
@@ -198,6 +210,25 @@ onBeforeUnmount(() => {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.4px;
+}
+
+.logout-btn {
+  margin-top: auto;
+  width: calc(100% - 4px);
+  margin: 14px 2px 0;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+  transition: background 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.24);
 }
 
 @media (max-width: 900px) {

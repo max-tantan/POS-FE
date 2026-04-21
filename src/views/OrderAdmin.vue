@@ -5,18 +5,52 @@ import { useRouter } from 'vue-router'
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
 const productTypes = ['Makanan', 'Minuman', 'Snack', 'Lainnya']
+const ordersStorageKey = 'sarapantelur.orders'
+const nextOrderStorageKey = 'sarapantelur.nextOrderNumber'
 const today = new Date().toISOString().slice(0, 10)
-const userRole = ref(localStorage.getItem('userRole') ?? '')
-const isAdmin = computed(() => userRole.value === 'admin')
-const isCustomer = computed(() => userRole.value === 'customer')
+const isAdmin = computed(() => true)
+const isCustomer = computed(() => false)
 const router = useRouter()
 
-const orders = ref([])
+const parseStoredOrders = () => {
+  try {
+    const raw = localStorage.getItem(ordersStorageKey)
+    if (!raw) {
+      return []
+    }
+    
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const inferNextOrderNumber = (orderList) => {
+  const highest = orderList.reduce((max, order) => {
+    const match = String(order?.id ?? '').match(/#ORD-(\d+)/)
+    if (!match) {
+      return max
+    }
+
+    return Math.max(max, Number(match[1]))
+  }, 1036)
+  return highest + 1
+}
+
+const storedOrders = parseStoredOrders()
+const parsedStoredNext = Number(localStorage.getItem(nextOrderStorageKey))
+
+const orders = ref(storedOrders)
 const searchQuery = ref('')
 const activeStatus = ref('Semua')
 const activePeriod = ref('Semua')
 const selectedOrderId = ref(null)
-const nextOrderNumber = ref(1037)
+const nextOrderNumber = ref(
+  Number.isFinite(parsedStoredNext) && parsedStoredNext >= 1000
+    ? Math.max(parsedStoredNext, inferNextOrderNumber(storedOrders))
+    : inferNextOrderNumber(storedOrders),
+)
 const formMode = ref('create')
 const editingOrderId = ref(null)
 const formError = ref('')
@@ -66,7 +100,7 @@ const menuOptions = ref([
 const customerOrderNumber = ref('')
 
 const productForm = reactive({
-  name: 'Produk Baru',
+  name: '',
   type: productTypes[0],
   price: 10000,
   image: '',
@@ -258,6 +292,18 @@ watch(
   },
   { deep: true, immediate: true },
 )
+
+watch(
+  orders,
+  (value) => {
+    localStorage.setItem(ordersStorageKey, JSON.stringify(value))
+  },
+  { deep: true },
+)
+
+watch(nextOrderNumber, (value) => {
+  localStorage.setItem(nextOrderStorageKey, String(value))
+})
 
 const resetForm = () => {
   form.customer = ''
@@ -775,18 +821,18 @@ resetForm()
                 :class="{ selected: selectedOrder?.id === order.id }"
                 @click="selectedOrderId = order.id"
               >
-                <td class="order-id">{{ order.id }}</td>
-                <td>{{ order.customer }}</td>
-                <td class="menu-col">{{ order.menu }}</td>
-                <td>{{ order.qty }}</td>
-                <td>{{ formatRupiah(order.totalAmount) }}</td>
-                <td>
+                <td class="order-id" data-label="ID Order">{{ order.id }}</td>
+                <td data-label="Pelanggan">{{ order.customer }}</td>
+                <td class="menu-col" data-label="Menu">{{ order.menu }}</td>
+                <td data-label="Qty">{{ order.qty }}</td>
+                <td data-label="Total">{{ formatRupiah(order.totalAmount) }}</td>
+                <td data-label="Status">
                   <span class="badge" :class="statusClass(order.status)">
                     {{ order.status }}
                   </span>
                 </td>
-                <td>{{ order.time }}</td>
-                <td v-if="isAdmin">
+                <td data-label="Waktu">{{ order.time }}</td>
+                <td v-if="isAdmin" data-label="Aksi">
                   <div class="row-actions">
                     <button
                       class="btn btn-success xsmall"
@@ -932,104 +978,6 @@ resetForm()
       </aside>
     </div>
 
-    <div v-else class="customer-content">
-      <section class="customer-card">
-        <h2>Menu Hari Ini</h2>
-        <p class="customer-note">Pilih menu favorit kamu, lalu isi form pesanan di bawah.</p>
-        <div class="menu-gallery">
-          <article v-for="menu in menuOptions" :key="menu.name" class="menu-card">
-            <img
-              :src="menu.image || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=80'"
-              :alt="menu.name"
-            />
-            <div class="menu-card-body">
-              <div>
-                <p class="menu-name">{{ menu.name }}</p>
-                <p class="menu-type">{{ menu.type || 'Lainnya' }}</p>
-              </div>
-              <p class="menu-price">{{ formatRupiah(menu.price) }}</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="customer-card">
-        <h2>Form Pesanan</h2>
-        <form class="order-form" @submit.prevent="saveOrder">
-          <label>
-            Nama
-            <input v-model="form.customer" type="text" placeholder="Nama kamu" />
-          </label>
-
-          <div class="multi-menu-panel">
-            <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
-            <div class="multi-menu-grid">
-              <div
-                v-for="option in menuOptions"
-                :key="option.name"
-                class="menu-option-card"
-                :class="{ selected: selectedMenus.includes(option.name) }"
-              >
-                <div class="menu-option-main">
-                  <div v-if="option.image" class="menu-option-thumb-wrap">
-                    <img class="menu-option-thumb" :src="option.image" :alt="option.name" />
-                  </div>
-                  <div v-else class="menu-option-thumb empty">No Image</div>
-
-                  <div class="menu-option-meta">
-                    <p class="menu-option-name">{{ option.name }}</p>
-                    <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
-                    <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
-                  </div>
-                </div>
-
-                <div class="menu-option-controls">
-                  <label class="menu-check-label">
-                    <input
-                      class="menu-option-check"
-                      type="checkbox"
-                      :checked="selectedMenus.includes(option.name)"
-                      @change="toggleMenuSelection(option.name, $event.target.checked)"
-                    />
-                    <span>Pilih</span>
-                  </label>
-                  <input
-                    v-if="selectedMenus.includes(option.name)"
-                    class="qty-inline"
-                    type="number"
-                    min="1"
-                    :value="menuQtyDraft[option.name] ?? 1"
-                    @input="setMenuQuantity(option.name, $event.target.value)"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="auto-summary">
-            <p>
-              Total:
-              <strong>{{ formatRupiah(estimatedTotal) }}</strong>
-            </p>
-            <p>
-              Total item:
-              <strong>{{ estimatedTotalQty }}</strong>
-            </p>
-          </div>
-
-          <p v-if="formError" class="form-error">{{ formError }}</p>
-
-          <p v-if="customerOrderNumber" class="order-number-info">
-            Nomor order kamu: <strong>{{ customerOrderNumber }}</strong>
-          </p>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Buat Pesanan</button>
-          </div>
-        </form>
-      </section>
-    </div>
-
     <div v-if="isAdmin && showProductForm" class="product-modal-backdrop" @click.self="closeProductForm">
       <section class="product-modal">
         <div class="product-modal-header">
@@ -1116,7 +1064,7 @@ resetForm()
 }
 
 .page-header {
-  background: linear-gradient(135deg, #173c5e, #1c5a7e);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 20px;
   padding: 24px;
@@ -1216,7 +1164,7 @@ h1 {
 }
 
 .stat-card {
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 16px;
   padding: 16px;
@@ -1253,7 +1201,7 @@ h1 {
 }
 
 .customer-card {
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
   padding: 16px;
@@ -1275,7 +1223,7 @@ h1 {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.22);
-  background: #0f2a41;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
 }
 
 .menu-card img {
@@ -1313,7 +1261,7 @@ h1 {
 
 .table-card,
 .side-card {
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
 }
@@ -1521,7 +1469,7 @@ h2 {
 .order-form select {
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
-  background: #0f2a41;
+  background: #18242f;
   color: #dbe9f5;
   padding: 10px 12px;
 }
@@ -1747,7 +1695,7 @@ h2 {
 .product-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.62);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   backdrop-filter: blur(2px);
   display: grid;
   place-items: center;
@@ -1759,7 +1707,7 @@ h2 {
   width: min(760px, 100%);
   max-height: 90vh;
   overflow: auto;
-  background: #16324b;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 16px;
   padding: 16px;
@@ -1786,7 +1734,7 @@ h2 {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 10px;
   padding: 10px;
-  background: rgba(15, 42, 65, 0.42);
+  background: rgba(30, 41, 59, 0.7);
 }
 
 .product-row {
@@ -1807,7 +1755,7 @@ h2 {
   grid-column: 1 / span 3;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
-  background: #0f2a41;
+  background: #152532;
   color: #dbe9f5;
   padding: 6px;
   font-size: 12px;
@@ -1954,6 +1902,53 @@ h2 {
 
   .form-actions {
     justify-content: flex-start;
+  }
+
+  .table-wrap table {
+    min-width: 0;
+  }
+
+  table thead {
+    display: none;
+  }
+
+  table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  table tbody tr {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 14px;
+    background: rgba(11, 37, 57, 0.6);
+  }
+
+  table tbody td {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    align-items: start;
+  }
+
+  table tbody td::before {
+    content: attr(data-label);
+    color: #9ec3de;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .menu-col {
+    max-width: none;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 </style>
