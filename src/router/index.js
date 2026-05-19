@@ -49,10 +49,17 @@ const router = createRouter({
   routes,
 })
 
-const getUserRole = () => localStorage.getItem('userRole')
+const getStoredRole = () => {
+  const token = localStorage.getItem('token')
+  const role = localStorage.getItem('userRole')
+
+  if (token && role === 'admin') return 'admin'
+  if (role === 'customer') return 'customer'
+  return null
+}
 
 router.beforeEach((to) => {
-  const role = getUserRole()
+  const role = getStoredRole()
   const isAuthenticated = role === 'admin' || role === 'customer'
 
   if (to.path === '/') {

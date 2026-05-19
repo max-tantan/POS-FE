@@ -8,25 +8,68 @@ const form = reactive({
   password: '',
 })
 const error = ref('')
+const loading = ref(false)
 
-const submitLogin = () => {
+const decodeToken = (token) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch {
+    return null
+  }
+}
+
+const submitLogin = async () => {
   const username = form.username.trim()
   const password = form.password.trim()
+
+  error.value = ''
 
   if (!username || !password) {
     error.value = 'Username dan password wajib diisi.'
     return
   }
 
-  localStorage.setItem('userRole', 'admin')
-  localStorage.setItem('isLoggedIn', 'true')
-  error.value = ''
-  router.push('/dashboard')
+  loading.value = true
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      if (res.status === 401) {
+        error.value = 'Username atau password salah.'
+      } else {
+        error.value = err.message || 'Terjadi kesalahan.'
+      }
+      return
+    }
+
+    const data = await res.json()
+    const decoded = decodeToken(data.token)
+
+    if (!decoded || !decoded.role) {
+      error.value = 'Token tidak valid.'
+      return
+    }
+
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('userRole', decoded.role)
+
+    router.push('/dashboard')
+  } catch {
+    error.value = 'Gagal terhubung ke server. Pastikan backend sedang berjalan.'
+  } finally {
+    loading.value = false
+  }
 }
 
 const continueAsCustomer = () => {
+  localStorage.removeItem('token')
   localStorage.setItem('userRole', 'customer')
-  localStorage.removeItem('isLoggedIn')
   error.value = ''
   router.push('/order')
 }
@@ -47,7 +90,7 @@ const continueAsCustomer = () => {
 
       <p v-if="error" class="error-text">{{ error }}</p>
 
-      <button type="submit">Masuk sebagai Admin</button>
+      <button type="submit" :disabled="loading">Masuk sebagai Admin</button>
       <button type="button" class="btn-skip" @click="continueAsCustomer">
         Lewati, lanjut sebagai pelanggan
       </button>

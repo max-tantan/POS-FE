@@ -20,9 +20,20 @@ const selectMenu = () => {
 
 const isActive = (path) => route.path === path
 
-const logout = () => {
+const logout = async () => {
+  const token = localStorage.getItem('token')
+
+  try {
+    await fetch('/auth/logout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch {
+    // tetap lanjut logout meskipun request gagal
+  }
+
+  localStorage.removeItem('token')
   localStorage.removeItem('userRole')
-  localStorage.removeItem('isLoggedIn')
   isSidebarOpen.value = false
   router.push('/login')
 }

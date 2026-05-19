@@ -741,8 +741,8 @@ const deleteOrder = (orderId) => {
 }
 
 const switchToAdmin = () => {
+  localStorage.removeItem('token')
   localStorage.removeItem('userRole')
-  localStorage.removeItem('isLoggedIn')
   router.push('/login')
 }
 
