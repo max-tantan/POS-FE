@@ -10,6 +10,7 @@ const todayLabel = new Date().toLocaleDateString('id-ID', {
   year: 'numeric',
 })
 
+
 const formatRupiah = (value) =>
   new Intl.NumberFormat('id-ID', {
     style: 'currency',
