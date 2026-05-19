@@ -62,39 +62,39 @@ const editImageInputKey = ref(0)
 
 const menuOptions = ref([
   {
-    name: 'Telur Mata Sapi',
-    type: 'Makanan',
+    name: 'Latte coffe',
+    type: 'Minuman',
     price: 12000,
     image:
-      'https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=900&q=80',
+      'https://i.pinimg.com/1200x/9c/1e/7b/9c1e7bcb9f175cacf388dc5e00e36b21.jpg',
   },
   {
-    name: 'Jus Jeruk',
+    name: 'Americano',
     type: 'Minuman',
     price: 10000,
     image:
-      'https://cdn.pixabay.com/photo/2012/11/28/09/31/orange-juice-67556__340.jpg',
+      'https://i.pinimg.com/736x/ba/8a/6a/ba8a6a2b1674cad6aa7f45c6dbce8f65.jpg',
   },
   {
-    name: 'Nasi Anget',
+    name: 'Mie goreng',
     type: 'Makanan',
     price: 5000,
     image:
-    'https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/7e26a3a0-c2f3-4d50-91cb-3e8eac22c10d_d346f44f-e621-423c-8642-3db4d3bb7211_Go-Biz_20191001_044300.jpeg',
+    'https://i.pinimg.com/1200x/b2/29/7d/b2297d9bb79e248d6e2fa50c3817a744.jpg',
   },
   {
     name: 'Ayam Geprek jos jos',
     type: 'Makanan',
     price: 15000,
     image:
-    '',
+    'https://i.pinimg.com/1200x/a6/fb/29/a6fb29e53206b849ae18c5e5db939712.jpg',
   },
   {
-    name: 'Ayam Sayur',
+    name: 'Nasi uduk',
     type: 'Makanan',
     price: 15000,
     image:
-    '',
+    'https://i.pinimg.com/736x/e1/c9/86/e1c98635f77a6ec4449f3f27b3dc9269.jpg',
   }
 ])
 const customerOrderNumber = ref('')
