@@ -104,71 +104,67 @@ const continueAsCustomer = () => {
   min-height: 100vh;
   display: grid;
   place-items: start;
-  background-color: #020617;
-  background-image: url('../assets/coffeshop.jpg');
-  background-size: 6
-  0% 100%;
-  background-position: right center;
-  background-repeat: no-repeat;
+  background-color: #f1f5f9;
 }
 
 .login-wrapper {
   width: 100%;
   min-height: 100vh;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
+  align-items: center;
 }
 
 .login-card {
   width: 100%;
-  max-width: 900px;
-  min-height: 100vh;
-  padding: 40px 200px;
+  max-width: 440px;
+  min-height: auto;
+  padding: 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: rgb(15, 23, 42);
-  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
-  border-radius: 0 18px 18px 0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 10px 30px rgba(0,0,0,0.04);
+  border-radius: 24px;
   gap: 10px;
 }
 
 .login-card h1 {
   margin: 0;
   font-size: 28px;
-  color: #f8fafc;
+  color: #0f172a;
   text-align: left;
 }
 
 .login-card .subtitle {
   margin: 0 0 18px;
-  color: #94a3b8;
+  color: #64748b;
   text-align: left;
 }
 
 .login-card label {
   font-size: 13px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #475569;
 }
 
 .login-card input {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid #e2e8f0;
   border-radius: 50px;
   padding: 11px 12px;
   font-size: 14px;
-  color: #f8fafc;
-  background-color: rgba(30, 41, 59, 0.9);
+  color: #1e293b;
+  background-color: #f8fafc;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .login-card input:focus {
-  background-color: rgba(30, 41, 59, 0.9);
+  background-color: #ffffff;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
   border-color: #22c55e;
-  color: #f8fafc;
+  color: #1e293b;
 }
 
 .login-card input::placeholder {
@@ -179,10 +175,10 @@ const continueAsCustomer = () => {
 .login-card input:-webkit-autofill:hover,
 .login-card input:-webkit-autofill:focus,
 .login-card input:-webkit-autofill:active {
-  -webkit-text-fill-color: #f8fafc;
-  -webkit-box-shadow: 0 0 0 1000px rgba(30, 41, 59, 0.9) inset;
-  box-shadow: 0 0 0 1000px rgba(30, 41, 59, 0.9) inset;
-  caret-color: #f8fafc;
+  -webkit-text-fill-color: #1e293b;
+  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset;
+  box-shadow: 0 0 0 1000px #f8fafc inset;
+  caret-color: #1e293b;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -201,8 +197,9 @@ const continueAsCustomer = () => {
   font-weight: 700;
   cursor: pointer;
   background: #22c55e;
-  color: #ecfdf5;
+  color: #ffffff;
   margin: 28px 0 0;
+  transition: background 0.2s ease;
 }
 
 .login-card button:hover {
@@ -210,12 +207,13 @@ const continueAsCustomer = () => {
 }
 
 .login-card .btn-skip {
-  margin-top: 4px;
-  background: #14244a;
-  color: #f8fafc;
+  margin-top: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  transition: background 0.2s ease;
 }
 
 .login-card .btn-skip:hover {
-  background: #1e293b;
+  background: #e2e8f0;
 }
 </style>

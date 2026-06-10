@@ -2,9 +2,20 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import lunchImg from '../assets/lunch.jpeg'
+import coffeshopImg from '../assets/coffeshop.jpg'
+import nuggetsImg from "../assets/CRINITI'S _ KIDS NUGGETS CHIPS.jpeg"
+import matchaImg from '../assets/Matcha-Infused Cold Brew with Black Sesame Foam.jpeg'
+import marzipanImg from '../assets/Salted Marzipan Cold Brew with Cherry Essence.jpeg'
+
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
 const productTypes = ['Makanan', 'Minuman', 'Snack', 'Lainnya']
+const activeProductType = ref('Semua')
+const filteredMenuOptions = computed(() => {
+  if (activeProductType.value === 'Semua') return menuOptions.value
+  return menuOptions.value.filter(m => m.type === activeProductType.value)
+})
 const ordersStorageKey = 'sarapantelur.orders'
 const nextOrderStorageKey = 'sarapantelur.nextOrderNumber'
 const today = new Date().toISOString().slice(0, 10)
@@ -65,36 +76,43 @@ const menuOptions = ref([
     name: 'Telur Mata Sapi',
     type: 'Makanan',
     price: 12000,
-    image:
-      'https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    name: 'Jus Jeruk',
-    type: 'Minuman',
-    price: 10000,
-    image:
-      'https://cdn.pixabay.com/photo/2012/11/28/09/31/orange-juice-67556__340.jpg',
+    image: lunchImg,
   },
   {
     name: 'Nasi Anget',
     type: 'Makanan',
     price: 5000,
-    image:
-    'https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/7e26a3a0-c2f3-4d50-91cb-3e8eac22c10d_d346f44f-e621-423c-8642-3db4d3bb7211_Go-Biz_20191001_044300.jpeg',
+    image: '',
   },
   {
     name: 'Ayam Geprek jos jos',
     type: 'Makanan',
     price: 15000,
-    image:
-    '',
+    image: '',
   },
   {
     name: 'Ayam Sayur',
     type: 'Makanan',
     price: 15000,
-    image:
-    '',
+    image: '',
+  },
+  {
+    name: 'Criniti Kids Nuggets',
+    type: 'Snack',
+    price: 25000,
+    image: nuggetsImg,
+  },
+  {
+    name: 'Matcha Cold Brew',
+    type: 'Minuman',
+    price: 35000,
+    image: matchaImg,
+  },
+  {
+    name: 'Salted Marzipan Cold Brew',
+    type: 'Minuman',
+    price: 38000,
+    image: marzipanImg,
   }
 ])
 const customerOrderNumber = ref('')
@@ -910,45 +928,53 @@ resetForm()
             </label>
 
             <div class="multi-menu-panel">
-              <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
+              <div class="multi-menu-header">
+                <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
+                <div class="product-type-tabs">
+                  <button
+                    v-for="type in ['Semua', ...productTypes]"
+                    :key="type"
+                    class="btn btn-soft xsmall"
+                    :class="{ active: activeProductType === type }"
+                    @click="activeProductType = type"
+                  >{{ type }}</button>
+                </div>
+              </div>
               <div class="multi-menu-grid">
                 <div
-                  v-for="option in menuOptions"
+                  v-for="option in filteredMenuOptions"
                   :key="option.name"
                   class="menu-option-card"
                   :class="{ selected: selectedMenus.includes(option.name) }"
+                  @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))"
                 >
-                  <div class="menu-option-main">
-                    <div v-if="option.image" class="menu-option-thumb-wrap">
-                      <img class="menu-option-thumb" :src="option.image" :alt="option.name" />
+                  <div class="menu-option-img-wrap">
+                    <img
+                      v-if="option.image"
+                      class="menu-option-img"
+                      :src="option.image"
+                      :alt="option.name"
+                    />
+                    <div v-else class="menu-option-img-placeholder">
+                      <span>{{ option.name.charAt(0) }}</span>
                     </div>
-                    <div v-else class="menu-option-thumb empty">No Image</div>
-
-                    <div class="menu-option-meta">
-                      <p class="menu-option-name">{{ option.name }}</p>
-                      <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
-                      <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                    <div v-if="selectedMenus.includes(option.name)" class="menu-option-check-badge">
+                      <span class="check-icon">✓</span>
+                      <input
+                        v-if="selectedMenus.includes(option.name)"
+                        class="qty-badge"
+                        type="number"
+                        min="1"
+                        :value="menuQtyDraft[option.name] ?? 1"
+                        @click.stop
+                        @input.stop="setMenuQuantity(option.name, $event.target.value)"
+                      />
                     </div>
                   </div>
-
-                  <div class="menu-option-controls">
-                    <label class="menu-check-label">
-                      <input
-                        class="menu-option-check"
-                        type="checkbox"
-                        :checked="selectedMenus.includes(option.name)"
-                        @change="toggleMenuSelection(option.name, $event.target.checked)"
-                      />
-                      <span>Pilih</span>
-                    </label>
-                    <input
-                      v-if="selectedMenus.includes(option.name)"
-                      class="qty-inline"
-                      type="number"
-                      min="1"
-                      :value="menuQtyDraft[option.name] ?? 1"
-                      @input="setMenuQuantity(option.name, $event.target.value)"
-                    />
+                  <div class="menu-option-body">
+                    <p class="menu-option-name">{{ option.name }}</p>
+                    <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
+                    <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
                   </div>
                 </div>
               </div>
@@ -1059,19 +1085,21 @@ resetForm()
 <style scoped>
 .order-page {
   display: grid;
-  gap: 20px;
-  color: #dbe9f5;
+  gap: 24px;
+  color: #1e293b;
+  padding-bottom: 24px;
 }
 
 .page-header {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   padding: 24px;
   display: flex;
   justify-content: space-between;
   gap: 20px;
   align-items: flex-start;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .header-actions {
@@ -1086,18 +1114,18 @@ resetForm()
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 12px;
-  color: #a3d6f8;
+  color: #22c55e;
 }
 
 h1 {
   margin: 6px 0;
   font-size: clamp(28px, 3vw, 34px);
-  color: #f3fbff;
+  color: #0f172a;
 }
 
 .subtitle {
   margin: 0;
-  color: #cae5f8;
+  color: #64748b;
   font-size: 14px;
 }
 
@@ -1108,17 +1136,19 @@ h1 {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-soft {
-  background: rgba(226, 232, 240, 0.15);
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 .btn-soft.active {
-  background: rgba(148, 197, 230, 0.35);
-  color: #f8fafc;
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
 }
 
 .btn.small {
@@ -1133,21 +1163,21 @@ h1 {
 
 .btn-warning {
   background: #f59e0b;
-  color: #1f2937;
+  color: #ffffff;
 }
 
 .btn-success {
   background: #22c55e;
-  color: #052e16;
+  color: #ffffff;
 }
 
 .btn-danger {
   background: #ef4444;
-  color: #fef2f2;
+  color: #ffffff;
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -1160,19 +1190,20 @@ h1 {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .stat-card {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 16px;
-  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .stat-label {
   margin: 0;
-  color: #9ec3de;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -1180,19 +1211,19 @@ h1 {
   margin: 6px 0 4px;
   font-size: 26px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #0f172a;
 }
 
 .stat-meta {
   margin: 0;
   font-size: 12px;
-  color: #7dd3ab;
+  color: #22c55e;
 }
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1.45fr 0.95fr;
-  gap: 16px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
 }
 
 .customer-content {
@@ -1201,15 +1232,16 @@ h1 {
 }
 
 .customer-card {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 18px;
   padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .customer-note {
   margin: -4px 0 14px;
-  color: #cae5f8;
+  color: #64748b;
   font-size: 13px;
 }
 
@@ -1222,8 +1254,9 @@ h1 {
 .menu-card {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .menu-card img {
@@ -1242,7 +1275,7 @@ h1 {
 
 .menu-name {
   margin: 0;
-  color: #e2e8f0;
+  color: #1e293b;
   font-weight: 600;
 }
 
@@ -1254,16 +1287,17 @@ h1 {
 
 .menu-price {
   margin: 0;
-  color: #7dd3ab;
+  color: #22c55e;
   font-size: 13px;
   font-weight: 600;
 }
 
 .table-card,
 .side-card {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .table-card {
@@ -1280,15 +1314,15 @@ h1 {
 .search {
   width: 100%;
   max-width: 360px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  background: #0f2a41;
-  color: #dbe9f5;
+  background: #f8fafc;
+  color: #1e293b;
   padding: 10px 12px;
 }
 
 .search::placeholder {
-  color: #7fa5c0;
+  color: #94a3b8;
 }
 
 .table-actions {
@@ -1312,17 +1346,17 @@ th,
 td {
   text-align: left;
   padding: 12px 10px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-bottom: 1px solid #f1f5f9;
   font-size: 13px;
 }
 
 th {
-  color: #9ec3de;
+  color: #64748b;
   font-weight: 600;
 }
 
 td {
-  color: #dbe9f5;
+  color: #1e293b;
 }
 
 .row-click {
@@ -1330,11 +1364,11 @@ td {
 }
 
 .row-click.selected {
-  background: rgba(147, 197, 253, 0.12);
+  background: #f8fafc;
 }
 
 .order-id {
-  color: #93c5fd;
+  color: #3b82f6;
   font-weight: 700;
 }
 
@@ -1349,7 +1383,7 @@ td {
 
 .empty {
   text-align: center;
-  color: #9ec3de;
+  color: #94a3b8;
 }
 
 .badge {
@@ -1361,41 +1395,43 @@ td {
 }
 
 .badge.processing {
-  background: rgba(250, 204, 21, 0.2);
-  color: #fde68a;
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .badge.shipped {
-  background: rgba(59, 130, 246, 0.2);
-  color: #bfdbfe;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .badge.completed {
-  background: rgba(34, 197, 94, 0.2);
-  color: #bbf7d0;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .badge.cancelled {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fecaca;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .side-panel {
   display: grid;
-  gap: 12px;
+  gap: 16px;
+  align-content: start;
 }
 
 .side-card {
-  padding: 16px;
+  padding: 20px;
 }
 
 .side-card.highlight {
-  background: linear-gradient(145deg, #185887, #1f6a99);
+  background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+  border-color: #bae6fd;
 }
 
 .side-label {
   margin: 0;
-  color: #c9e7fb;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -1403,12 +1439,12 @@ td {
   margin: 8px 0 4px;
   font-size: 26px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #0f172a;
 }
 
 .side-sub {
   margin: 0 0 14px;
-  color: #d9ecf8;
+  color: #475569;
   font-size: 13px;
 }
 
@@ -1422,7 +1458,7 @@ td {
 h2 {
   margin: 0 0 14px;
   font-size: 18px;
-  color: #f1f5f9;
+  color: #0f172a;
 }
 
 .timeline {
@@ -1435,189 +1471,200 @@ h2 {
 
 .timeline li {
   padding: 10px 12px;
-  background: #0f2a41;
+  background: #f8fafc;
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  border: 1px solid #e2e8f0;
 }
 
 .timeline p {
   margin: 0;
   font-size: 13px;
-  color: #e2e8f0;
+  color: #1e293b;
 }
 
 .timeline span {
   display: inline-block;
   margin-top: 5px;
   font-size: 12px;
-  color: #9ec3de;
+  color: #64748b;
 }
 
 .order-form {
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
 .order-form label {
   display: grid;
   gap: 6px;
-  font-size: 12px;
-  color: #9ec3de;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
 }
 
 .order-form input,
 .order-form select {
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  background: #18242f;
-  color: #dbe9f5;
+  background: #f8fafc;
+  color: #1e293b;
   padding: 10px 12px;
 }
 
 .multi-menu-panel {
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 12px;
-  background: rgba(15, 42, 65, 0.45);
-  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 14px;
   display: grid;
+  gap: 12px;
+}
+
+.multi-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.product-type-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .multi-menu-title {
   margin: 0;
-  font-size: 12px;
-  color: #bae6fd;
+  font-size: 13px;
+  color: #22c55e;
   font-weight: 700;
 }
 
 .multi-menu-grid {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
 }
 
 .menu-option-card {
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 12px;
-  background: rgba(11, 37, 57, 0.8);
-  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   display: grid;
-  gap: 8px;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  grid-template-rows: 120px auto;
 }
 
 .menu-option-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  border-color: #cbd5e1;
 }
 
 .menu-option-card.selected {
-  border-color: rgba(56, 189, 248, 0.65);
-  background: rgba(15, 67, 102, 0.52);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15), 0 4px 14px rgba(0,0,0,0.06);
 }
 
-.menu-option-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-option-thumb-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+.menu-option-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 120px;
   overflow: hidden;
-  flex-shrink: 0;
+  background: #f1f5f9;
 }
 
-.menu-option-thumb {
+.menu-option-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s ease;
 }
 
-.menu-option-thumb.empty {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+.menu-option-card:hover .menu-option-img {
+  transform: scale(1.05);
+}
+
+.menu-option-img-placeholder {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
-  font-size: 10px;
-  color: #94a3b8;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px dashed rgba(148, 163, 184, 0.35);
+  background: linear-gradient(135deg, #e0e7ff, #dbeafe);
+  color: #6366f1;
+  font-size: 32px;
+  font-weight: 700;
 }
 
-.menu-option-meta {
-  min-width: 0;
+.menu-option-check-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #22c55e;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 6px 2px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+}
+
+.check-icon {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.25);
+  font-size: 10px;
+}
+
+.qty-badge {
+  width: 32px;
+  padding: 2px 4px !important;
+  border: none !important;
+  background: rgba(255,255,255,0.2) !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.menu-option-body {
+  padding: 10px;
+  display: grid;
+  gap: 2px;
 }
 
 .menu-option-name {
   margin: 0;
-  color: #e2e8f0;
+  color: #1e293b;
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-option-price {
-  margin: 4px 0 0;
-  color: #86efac;
-  font-size: 12px;
+  margin: 0;
+  color: #22c55e;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .menu-option-type {
-  margin: 2px 0 0;
-  color: #93c5fd;
+  margin: 0;
+  color: #94a3b8;
   font-size: 11px;
-}
-
-.menu-option-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.menu-check-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #bfdbfe;
-  font-size: 12px;
-}
-
-.menu-option-check {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(148, 163, 184, 0.65);
-  background: #0f2a41;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  position: relative;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.menu-option-check:hover {
-  border-color: #7dd3fc;
-}
-
-.menu-option-check:checked {
-  background: #0284c7;
-  border-color: #7dd3fc;
-  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.2);
-}
-
-.menu-option-check:checked::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #e0f2fe;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 .qty-inline {
@@ -1626,16 +1673,16 @@ h2 {
 }
 
 .auto-summary {
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  background: rgba(15, 42, 65, 0.45);
+  background: #f8fafc;
   padding: 10px;
 }
 
 .auto-summary p {
   margin: 0;
   font-size: 12px;
-  color: #cfe5f5;
+  color: #475569;
 }
 
 .auto-summary p + p {
@@ -1643,9 +1690,9 @@ h2 {
 }
 
 .menu-option-panel {
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  background: rgba(15, 42, 65, 0.45);
+  background: #f8fafc;
   padding: 10px;
   display: grid;
   gap: 8px;
@@ -1653,7 +1700,7 @@ h2 {
 
 .menu-option-title {
   margin: 0;
-  color: #9ec3de;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -1684,7 +1731,7 @@ h2 {
 
 .menu-option-list span {
   font-size: 13px;
-  color: #dbe9f5;
+  color: #1e293b;
 }
 
 .menu-option-actions {
@@ -1695,8 +1742,8 @@ h2 {
 .product-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
   padding: 16px;
@@ -1707,12 +1754,13 @@ h2 {
   width: min(760px, 100%);
   max-height: 90vh;
   overflow: auto;
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 16px;
   display: grid;
   gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
 }
 
 .product-modal-header {
@@ -1731,10 +1779,10 @@ h2 {
 }
 
 .product-list li {
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 10px;
-  background: rgba(30, 41, 59, 0.7);
+  background: #f8fafc;
 }
 
 .product-row {
@@ -1753,19 +1801,19 @@ h2 {
 
 .product-image-input {
   grid-column: 1 / span 3;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  background: #152532;
-  color: #dbe9f5;
+  background: #f8fafc;
+  color: #1e293b;
   padding: 6px;
   font-size: 12px;
 }
 
 .product-image-input::file-selector-button {
-  border: 1px solid rgba(125, 211, 252, 0.35);
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  background: rgba(14, 116, 144, 0.28);
-  color: #e0f2fe;
+  background: #f1f5f9;
+  color: #475569;
   padding: 7px 10px;
   margin-right: 10px;
   cursor: pointer;
@@ -1774,10 +1822,10 @@ h2 {
 }
 
 .product-image-input::-webkit-file-upload-button {
-  border: 1px solid rgba(125, 211, 252, 0.35);
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  background: rgba(14, 116, 144, 0.28);
-  color: #e0f2fe;
+  background: #f1f5f9;
+  color: #475569;
   padding: 7px 10px;
   margin-right: 10px;
   cursor: pointer;
@@ -1786,10 +1834,10 @@ h2 {
 }
 
 .product-image-preview {
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 8px;
-  background: rgba(15, 42, 65, 0.42);
+  background: #f8fafc;
   width: fit-content;
 }
 
@@ -1811,7 +1859,7 @@ h2 {
 
 .form-error {
   margin: 0;
-  color: #fca5a5;
+  color: #dc2626;
   font-size: 12px;
 }
 
@@ -1823,11 +1871,11 @@ h2 {
 
 .order-number-info {
   margin: 0;
-  border: 1px solid rgba(125, 211, 171, 0.35);
-  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
   border-radius: 10px;
   padding: 10px;
-  color: #dcfce7;
+  color: #15803d;
   font-size: 13px;
 }
 
@@ -1921,9 +1969,9 @@ h2 {
     display: grid;
     gap: 8px;
     padding: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
-    background: rgba(11, 37, 57, 0.6);
+    background: #ffffff;
   }
 
   table tbody td {
@@ -1937,7 +1985,7 @@ h2 {
 
   table tbody td::before {
     content: attr(data-label);
-    color: #9ec3de;
+    color: #64748b;
     font-size: 12px;
     font-weight: 600;
   }
