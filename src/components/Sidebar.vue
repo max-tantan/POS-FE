@@ -1,6 +1,8 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Squares2X2Icon, ShoppingCartIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftEndOnRectangleIcon } from '@heroicons/vue/24/outline'
 
 const isSidebarOpen = ref(true)
 const isMobile = ref(false)
@@ -8,8 +10,8 @@ const route = useRoute()
 const router = useRouter()
 
 const menus = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'DB', to: '/dashboard' },
-  { id: 'order', label: 'Order', icon: 'OR', to: '/order-admin' },
+  { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/dashboard' },
+  { id: 'order', label: 'Order', icon: ShoppingCartIcon, to: '/order-admin' },
 ]
 
 const selectMenu = () => {
@@ -82,13 +84,16 @@ onBeforeUnmount(() => {
             :to="menu.to"
             @click="selectMenu"
           >
-            <span class="menu-icon">{{ menu.icon }}</span>
+            <span class="menu-icon">
+              <component :is="menu.icon" class="icon" />
+            </span>
             <span>{{ menu.label }}</span>
           </RouterLink>
         </li>
       </ul>
 
       <button class="logout-btn" type="button" @click="logout">
+        <ArrowLeftEndOnRectangleIcon class="icon" />
         Logout
       </button>
     </aside>
@@ -228,6 +233,11 @@ onBeforeUnmount(() => {
   color: #64748b;
 }
 
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
 .logout-btn {
   margin-top: auto;
   width: calc(100% - 4px);
@@ -240,6 +250,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
   background: #fef2f2;
   color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   transition: background 0.2s ease;
 }
 

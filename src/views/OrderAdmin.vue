@@ -248,6 +248,24 @@ const setMenuQuantity = (menuName, value) => {
   menuQtyDraft[menuName] = qty
 }
 
+const incrementQty = (menuName) => {
+  const current = Number(menuQtyDraft[menuName]) || 1
+  menuQtyDraft[menuName] = current + 1
+}
+
+const decrementQty = (menuName) => {
+  const current = Number(menuQtyDraft[menuName]) || 1
+  if (current <= 1) {
+    toggleMenuSelection(menuName, false)
+    return
+  }
+  menuQtyDraft[menuName] = current - 1
+}
+
+const removeSelectedMenu = (menuName) => {
+  toggleMenuSelection(menuName, false)
+}
+
 const buildMenuSummary = (items) => items.map((item) => `${item.name} x${item.qty}`).join(', ')
 
 const readFileAsDataUrl = (file) =>
@@ -946,9 +964,8 @@ resetForm()
                   :key="option.name"
                   class="menu-option-card"
                   :class="{ selected: selectedMenus.includes(option.name) }"
-                  @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))"
                 >
-                  <div class="menu-option-img-wrap">
+                  <div class="menu-option-img-wrap" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
                     <img
                       v-if="option.image"
                       class="menu-option-img"
@@ -960,21 +977,42 @@ resetForm()
                     </div>
                     <div v-if="selectedMenus.includes(option.name)" class="menu-option-check-badge">
                       <span class="check-icon">✓</span>
-                      <input
-                        v-if="selectedMenus.includes(option.name)"
-                        class="qty-badge"
-                        type="number"
-                        min="1"
-                        :value="menuQtyDraft[option.name] ?? 1"
-                        @click.stop
-                        @input.stop="setMenuQuantity(option.name, $event.target.value)"
-                      />
                     </div>
                   </div>
-                  <div class="menu-option-body">
+                  <div class="menu-option-body" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
                     <p class="menu-option-name">{{ option.name }}</p>
                     <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
                     <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                  </div>
+                  <div v-if="selectedMenus.includes(option.name)" class="menu-option-qty">
+                    <button class="qty-btn qty-minus" @click.stop="decrementQty(option.name)">−</button>
+                    <input
+                      class="qty-input"
+                      type="number"
+                      min="1"
+                      :value="menuQtyDraft[option.name] ?? 1"
+                      @click.stop
+                      @input.stop="setMenuQuantity(option.name, $event.target.value)"
+                    />
+                    <button class="qty-btn qty-plus" @click.stop="incrementQty(option.name)">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="selectedMenuItems.length" class="selected-items-summary">
+                <p class="selected-items-title">Pesanan Dipilih</p>
+                <div class="selected-items-list">
+                  <div v-for="item in selectedMenuItems" :key="item.name" class="selected-item-row">
+                    <div class="selected-item-info">
+                      <span class="selected-item-name">{{ item.name }}</span>
+                      <span class="selected-item-subtotal">{{ formatRupiah(item.subtotal) }}</span>
+                    </div>
+                    <div class="selected-item-qty">
+                      <button class="qty-btn qty-minus xs" @click="decrementQty(item.name)">−</button>
+                      <span class="selected-item-qty-val">{{ item.qty }}</span>
+                      <button class="qty-btn qty-plus xs" @click="incrementQty(item.name)">+</button>
+                      <button class="selected-item-remove" @click="removeSelectedMenu(item.name)">✕</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1604,44 +1642,27 @@ h2 {
   position: absolute;
   top: 8px;
   right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
   background: #22c55e;
   color: #fff;
   border-radius: 999px;
-  padding: 2px 6px 2px 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
 }
 
 .check-icon {
-  width: 18px;
-  height: 18px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.25);
-  font-size: 10px;
-}
-
-.qty-badge {
-  width: 32px;
-  padding: 2px 4px !important;
-  border: none !important;
-  background: rgba(255,255,255,0.2) !important;
-  color: #fff !important;
-  border-radius: 6px !important;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 700;
+  line-height: 1;
 }
 
 .menu-option-body {
-  padding: 10px;
+  padding: 10px 10px 0;
   display: grid;
   gap: 2px;
+  cursor: pointer;
 }
 
 .menu-option-name {
@@ -1665,6 +1686,166 @@ h2 {
   margin: 0;
   color: #94a3b8;
   font-size: 11px;
+}
+
+.menu-option-qty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px 10px;
+}
+
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.qty-btn:hover {
+  background: #e2e8f0;
+}
+
+.qty-btn.qty-minus:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.qty-btn.qty-plus:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #16a34a;
+}
+
+.qty-btn.xs {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.qty-input {
+  width: 44px;
+  text-align: center;
+  padding: 4px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Selected items summary */
+.selected-items-summary {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.selected-items-title {
+  margin: 0;
+  padding: 10px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #22c55e;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.selected-items-list {
+  display: grid;
+  gap: 0;
+}
+
+.selected-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.selected-item-row:last-child {
+  border-bottom: none;
+}
+
+.selected-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.selected-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected-item-subtotal {
+  font-size: 11px;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.selected-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.selected-item-qty-val {
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.selected-item-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 6px;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 10px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  margin-left: 4px;
+  transition: background 0.15s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.selected-item-remove:hover {
+  background: #fca5a5;
 }
 
 .qty-inline {

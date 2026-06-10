@@ -163,7 +163,7 @@ const statusBadgeClass = (status) => {
       <div>
         <p class="eyebrow">Ringkasan Operasional</p>
         <h1>Dashboard</h1>
-        <p class="subtitle">Data dashboard hanya muncul dari CRUD di halaman Order.</p>
+        <p class="subtitle">Data dashboard.</p>
       </div>
       <p class="date-pill">{{ todayLabel }}</p>
     </header>
