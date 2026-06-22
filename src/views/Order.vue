@@ -2,9 +2,20 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import lunchImg from '../assets/lunch.jpeg'
+import coffeshopImg from '../assets/coffeshop.jpg'
+import nuggetsImg from "../assets/CRINITI'S _ KIDS NUGGETS CHIPS.jpeg"
+import matchaImg from '../assets/Matcha-Infused Cold Brew with Black Sesame Foam.jpeg'
+import marzipanImg from '../assets/Salted Marzipan Cold Brew with Cherry Essence.jpeg'
+
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
 const productTypes = ['Makanan', 'Minuman', 'Snack', 'Lainnya']
+const activeProductType = ref('Semua')
+const filteredMenuOptions = computed(() => {
+  if (activeProductType.value === 'Semua') return menuOptions.value
+  return menuOptions.value.filter(m => m.type === activeProductType.value)
+})
 const today = new Date().toISOString().slice(0, 10)
 const userRole = ref(localStorage.getItem('userRole') ?? '')
 const isAdmin = computed(() => userRole.value === 'admin')
@@ -31,36 +42,74 @@ const menuOptions = ref([
     name: 'Latte coffe',
     type: 'Makanan',
     price: 12000,
+<<<<<<< HEAD
     image:
       'https://i.pinimg.com/1200x/9c/1e/7b/9c1e7bcb9f175cacf388dc5e00e36b21.jpg',
+=======
+    image: lunchImg,
+>>>>>>> 93a4cf2fd666b23665bbdfc277c3268070b27046
   },
   {
     name: 'Jus Jeruk',
     type: 'Minuman',
     price: 10000,
+<<<<<<< HEAD
     image:
       'https://i.pinimg.com/736x/ba/8a/6a/ba8a6a2b1674cad6aa7f45c6dbce8f65.jpg',
+=======
+    image: coffeshopImg,
+>>>>>>> 93a4cf2fd666b23665bbdfc277c3268070b27046
   },
   {
     name: 'Mie goreng',
     type: 'Makanan',
     price: 5000,
+<<<<<<< HEAD
     image:
     'https://i.pinimg.com/1200x/b2/29/7d/b2297d9bb79e248d6e2fa50c3817a744.jpg',
+=======
+    image: '',
+>>>>>>> 93a4cf2fd666b23665bbdfc277c3268070b27046
   },
   {
     name: 'Ayam Geprek jos jos',
     type: 'Makanan',
     price: 15000,
+<<<<<<< HEAD
     image:
     'https://i.pinimg.com/1200x/a6/fb/29/a6fb29e53206b849ae18c5e5db939712.jpg',
+=======
+    image: '',
+>>>>>>> 93a4cf2fd666b23665bbdfc277c3268070b27046
   },
   {
     name: 'Nasi uduk',
     type: 'Makanan',
     price: 15000,
+<<<<<<< HEAD
     image:
     'https://i.pinimg.com/736x/e1/c9/86/e1c98635f77a6ec4449f3f27b3dc9269.jpg',
+=======
+    image: '',
+  },
+  {
+    name: 'Criniti Kids Nuggets',
+    type: 'Snack',
+    price: 25000,
+    image: nuggetsImg,
+  },
+  {
+    name: 'Matcha Cold Brew',
+    type: 'Minuman',
+    price: 35000,
+    image: matchaImg,
+  },
+  {
+    name: 'Salted Marzipan Cold Brew',
+    type: 'Minuman',
+    price: 38000,
+    image: marzipanImg,
+>>>>>>> 93a4cf2fd666b23665bbdfc277c3268070b27046
   }
 ])
 const customerOrderNumber = ref('')
@@ -194,6 +243,24 @@ const toggleMenuSelection = (menuName, checked) => {
 const setMenuQuantity = (menuName, value) => {
   const qty = Math.max(1, Number(value) || 1)
   menuQtyDraft[menuName] = qty
+}
+
+const incrementQty = (menuName) => {
+  const current = Number(menuQtyDraft[menuName]) || 1
+  menuQtyDraft[menuName] = current + 1
+}
+
+const decrementQty = (menuName) => {
+  const current = Number(menuQtyDraft[menuName]) || 1
+  if (current <= 1) {
+    toggleMenuSelection(menuName, false)
+    return
+  }
+  menuQtyDraft[menuName] = current - 1
+}
+
+const removeSelectedMenu = (menuName) => {
+  toggleMenuSelection(menuName, false)
 }
 
 const buildMenuSummary = (items) => items.map((item) => `${item.name} x${item.qty}`).join(', ')
@@ -695,8 +762,8 @@ const deleteOrder = (orderId) => {
 }
 
 const switchToAdmin = () => {
+  localStorage.removeItem('token')
   localStorage.removeItem('userRole')
-  localStorage.removeItem('isLoggedIn')
   router.push('/login')
 }
 
@@ -864,45 +931,73 @@ resetForm()
             </label>
 
             <div class="multi-menu-panel">
-              <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
+              <div class="multi-menu-header">
+                <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
+                <div class="product-type-tabs">
+                  <button
+                    v-for="type in ['Semua', ...productTypes]"
+                    :key="type"
+                    class="btn btn-soft xsmall"
+                    :class="{ active: activeProductType === type }"
+                    @click="activeProductType = type"
+                  >{{ type }}</button>
+                </div>
+              </div>
               <div class="multi-menu-grid">
                 <div
-                  v-for="option in menuOptions"
+                  v-for="option in filteredMenuOptions"
                   :key="option.name"
                   class="menu-option-card"
                   :class="{ selected: selectedMenus.includes(option.name) }"
                 >
-                  <div class="menu-option-main">
-                    <div v-if="option.image" class="menu-option-thumb-wrap">
-                      <img class="menu-option-thumb" :src="option.image" :alt="option.name" />
+                  <div class="menu-option-img-wrap" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
+                    <img
+                      v-if="option.image"
+                      class="menu-option-img"
+                      :src="option.image"
+                      :alt="option.name"
+                    />
+                    <div v-else class="menu-option-img-placeholder">
+                      <span>{{ option.name.charAt(0) }}</span>
                     </div>
-                    <div v-else class="menu-option-thumb empty">No Image</div>
-
-                    <div class="menu-option-meta">
-                      <p class="menu-option-name">{{ option.name }}</p>
-                      <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
-                      <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                    <div v-if="selectedMenus.includes(option.name)" class="menu-option-check-badge">
+                      <span class="check-icon">✓</span>
                     </div>
                   </div>
-
-                  <div class="menu-option-controls">
-                    <label class="menu-check-label">
-                      <input
-                        class="menu-option-check"
-                        type="checkbox"
-                        :checked="selectedMenus.includes(option.name)"
-                        @change="toggleMenuSelection(option.name, $event.target.checked)"
-                      />
-                      <span>Pilih</span>
-                    </label>
+                  <div class="menu-option-body" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
+                    <p class="menu-option-name">{{ option.name }}</p>
+                    <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
+                    <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                  </div>
+                  <div v-if="selectedMenus.includes(option.name)" class="menu-option-qty">
+                    <button class="qty-btn qty-minus" @click.stop="decrementQty(option.name)">−</button>
                     <input
-                      v-if="selectedMenus.includes(option.name)"
-                      class="qty-inline"
+                      class="qty-input"
                       type="number"
                       min="1"
                       :value="menuQtyDraft[option.name] ?? 1"
-                      @input="setMenuQuantity(option.name, $event.target.value)"
+                      @click.stop
+                      @input.stop="setMenuQuantity(option.name, $event.target.value)"
                     />
+                    <button class="qty-btn qty-plus" @click.stop="incrementQty(option.name)">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="selectedMenuItems.length" class="selected-items-summary">
+                <p class="selected-items-title">Pesanan Dipilih</p>
+                <div class="selected-items-list">
+                  <div v-for="item in selectedMenuItems" :key="item.name" class="selected-item-row">
+                    <div class="selected-item-info">
+                      <span class="selected-item-name">{{ item.name }}</span>
+                      <span class="selected-item-subtotal">{{ formatRupiah(item.subtotal) }}</span>
+                    </div>
+                    <div class="selected-item-qty">
+                      <button class="qty-btn qty-minus xs" @click="decrementQty(item.name)">−</button>
+                      <span class="selected-item-qty-val">{{ item.qty }}</span>
+                      <button class="qty-btn qty-plus xs" @click="incrementQty(item.name)">+</button>
+                      <button class="selected-item-remove" @click="removeSelectedMenu(item.name)">✕</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -934,10 +1029,23 @@ resetForm()
 
     <div v-else class="customer-content">
       <section class="customer-card">
-        <h2>Menu Hari Ini</h2>
-        <p class="customer-note">Pilih menu favorit kamu, lalu isi form pesanan di bawah.</p>
+        <div class="customer-card-header">
+          <div>
+            <h2>Menu Hari Ini</h2>
+            <p class="customer-note">Pilih menu favorit kamu, lalu isi form pesanan di bawah.</p>
+          </div>
+          <div class="product-type-tabs">
+            <button
+              v-for="type in ['Semua', ...productTypes]"
+              :key="type"
+              class="btn btn-soft xsmall"
+              :class="{ active: activeProductType === type }"
+              @click="activeProductType = type"
+            >{{ type }}</button>
+          </div>
+        </div>
         <div class="menu-gallery">
-          <article v-for="menu in menuOptions" :key="menu.name" class="menu-card">
+          <article v-for="menu in filteredMenuOptions" :key="menu.name" class="menu-card">
             <img
               :src="menu.image || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=80'"
               :alt="menu.name"
@@ -962,45 +1070,73 @@ resetForm()
           </label>
 
           <div class="multi-menu-panel">
-            <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
+            <div class="multi-menu-header">
+              <p class="multi-menu-title">Menu (bisa pilih lebih dari 1)</p>
+              <div class="product-type-tabs">
+                <button
+                  v-for="type in ['Semua', ...productTypes]"
+                  :key="type"
+                  class="btn btn-soft xsmall"
+                  :class="{ active: activeProductType === type }"
+                  @click="activeProductType = type"
+                >{{ type }}</button>
+              </div>
+            </div>
             <div class="multi-menu-grid">
               <div
-                v-for="option in menuOptions"
+                v-for="option in filteredMenuOptions"
                 :key="option.name"
                 class="menu-option-card"
                 :class="{ selected: selectedMenus.includes(option.name) }"
               >
-                <div class="menu-option-main">
-                  <div v-if="option.image" class="menu-option-thumb-wrap">
-                    <img class="menu-option-thumb" :src="option.image" :alt="option.name" />
+                <div class="menu-option-img-wrap" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
+                  <img
+                    v-if="option.image"
+                    class="menu-option-img"
+                    :src="option.image"
+                    :alt="option.name"
+                  />
+                  <div v-else class="menu-option-img-placeholder">
+                    <span>{{ option.name.charAt(0) }}</span>
                   </div>
-                  <div v-else class="menu-option-thumb empty">No Image</div>
-
-                  <div class="menu-option-meta">
-                    <p class="menu-option-name">{{ option.name }}</p>
-                    <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
-                    <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                  <div v-if="selectedMenus.includes(option.name)" class="menu-option-check-badge">
+                    <span class="check-icon">✓</span>
                   </div>
                 </div>
-
-                <div class="menu-option-controls">
-                  <label class="menu-check-label">
-                    <input
-                      class="menu-option-check"
-                      type="checkbox"
-                      :checked="selectedMenus.includes(option.name)"
-                      @change="toggleMenuSelection(option.name, $event.target.checked)"
-                    />
-                    <span>Pilih</span>
-                  </label>
+                <div class="menu-option-body" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
+                  <p class="menu-option-name">{{ option.name }}</p>
+                  <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
+                  <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                </div>
+                <div v-if="selectedMenus.includes(option.name)" class="menu-option-qty">
+                  <button class="qty-btn qty-minus" @click.stop="decrementQty(option.name)">−</button>
                   <input
-                    v-if="selectedMenus.includes(option.name)"
-                    class="qty-inline"
+                    class="qty-input"
                     type="number"
                     min="1"
                     :value="menuQtyDraft[option.name] ?? 1"
-                    @input="setMenuQuantity(option.name, $event.target.value)"
+                    @click.stop
+                    @input.stop="setMenuQuantity(option.name, $event.target.value)"
                   />
+                  <button class="qty-btn qty-plus" @click.stop="incrementQty(option.name)">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="selectedMenuItems.length" class="selected-items-summary">
+              <p class="selected-items-title">Pesanan Dipilih</p>
+              <div class="selected-items-list">
+                <div v-for="item in selectedMenuItems" :key="item.name" class="selected-item-row">
+                  <div class="selected-item-info">
+                    <span class="selected-item-name">{{ item.name }}</span>
+                    <span class="selected-item-subtotal">{{ formatRupiah(item.subtotal) }}</span>
+                  </div>
+                  <div class="selected-item-qty">
+                    <button class="qty-btn qty-minus xs" @click="decrementQty(item.name)">−</button>
+                    <span class="selected-item-qty-val">{{ item.qty }}</span>
+                    <button class="qty-btn qty-plus xs" @click="incrementQty(item.name)">+</button>
+                    <button class="selected-item-remove" @click="removeSelectedMenu(item.name)">✕</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1259,6 +1395,14 @@ h1 {
   padding: 16px;
 }
 
+.customer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
 .customer-note {
   margin: -4px 0 14px;
   color: #cae5f8;
@@ -1267,29 +1411,36 @@ h1 {
 
 .menu-gallery {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
 }
 
 .menu-card {
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.22);
   background: #0f2a41;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
 .menu-card img {
   width: 100%;
-  height: 250px;
+  height: 180px;
   object-fit: cover;
   display: block;
 }
 
 .menu-card-body {
-  padding: 10px;
+  padding: 12px;
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  align-items: flex-start;
 }
 
 .menu-name {
@@ -1528,79 +1679,118 @@ h2 {
 
 .multi-menu-panel {
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(15, 42, 65, 0.45);
-  padding: 12px;
+  padding: 14px;
   display: grid;
+  gap: 12px;
+}
+
+.multi-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.product-type-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .multi-menu-title {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #bae6fd;
   font-weight: 700;
 }
 
 .multi-menu-grid {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
 }
 
 .menu-option-card {
   border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(11, 37, 57, 0.8);
-  padding: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   display: grid;
-  gap: 8px;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  grid-template-rows: 120px auto;
 }
 
 .menu-option-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
 }
 
 .menu-option-card.selected {
   border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15), 0 4px 14px rgba(0,0,0,0.15);
   background: rgba(15, 67, 102, 0.52);
 }
 
-.menu-option-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-option-thumb-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+.menu-option-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 120px;
   overflow: hidden;
-  flex-shrink: 0;
+  background: rgba(15, 42, 65, 0.6);
 }
 
-.menu-option-thumb {
+.menu-option-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s ease;
 }
 
-.menu-option-thumb.empty {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+.menu-option-card:hover .menu-option-img {
+  transform: scale(1.05);
+}
+
+.menu-option-img-placeholder {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
-  font-size: 10px;
-  color: #94a3b8;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px dashed rgba(148, 163, 184, 0.35);
+  background: linear-gradient(135deg, #1e3a5f, #2d5a7e);
+  color: #93c5fd;
+  font-size: 32px;
+  font-weight: 700;
 }
 
-.menu-option-meta {
-  min-width: 0;
+.menu-option-check-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  background: #0284c7;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+}
+
+.check-icon {
+  line-height: 1;
+}
+
+.menu-option-body {
+  padding: 10px 10px 0;
+  display: grid;
+  gap: 2px;
+  cursor: pointer;
 }
 
 .menu-option-name {
@@ -1608,68 +1798,182 @@ h2 {
   color: #e2e8f0;
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-option-price {
-  margin: 4px 0 0;
+  margin: 0;
   color: #86efac;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .menu-option-type {
-  margin: 2px 0 0;
-  color: #93c5fd;
+  margin: 0;
+  color: #94a3b8;
   font-size: 11px;
 }
 
-.menu-option-controls {
+.menu-option-qty {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px 10px;
 }
 
-.menu-check-label {
-  display: inline-flex;
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  background: rgba(15, 42, 65, 0.6);
+  color: #cbd5e1;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.qty-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.qty-btn.qty-minus:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.qty-btn.qty-plus:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+.qty-btn.xs {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.qty-input {
+  width: 44px;
+  text-align: center;
+  padding: 4px !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+  border-radius: 8px !important;
+  background: #0f2a41 !important;
+  color: #e2e8f0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Selected items summary */
+.selected-items-summary {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  background: rgba(11, 37, 57, 0.6);
+  overflow: hidden;
+}
+
+.selected-items-title {
+  margin: 0;
+  padding: 10px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #bae6fd;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.selected-items-list {
+  display: grid;
+  gap: 0;
+}
+
+.selected-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+}
+
+.selected-item-row:last-child {
+  border-bottom: none;
+}
+
+.selected-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.selected-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected-item-subtotal {
+  font-size: 11px;
+  color: #86efac;
+  font-weight: 600;
+}
+
+.selected-item-qty {
+  display: flex;
   align-items: center;
   gap: 6px;
-  color: #bfdbfe;
-  font-size: 12px;
+  flex-shrink: 0;
 }
 
-.menu-option-check {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(148, 163, 184, 0.65);
-  background: #0f2a41;
-  appearance: none;
-  -webkit-appearance: none;
+.selected-item-qty-val {
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.selected-item-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  font-size: 10px;
   cursor: pointer;
-  position: relative;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  display: grid;
+  place-items: center;
+  margin-left: 4px;
+  transition: background 0.15s ease;
+  padding: 0;
+  line-height: 1;
 }
 
-.menu-option-check:hover {
-  border-color: #7dd3fc;
-}
-
-.menu-option-check:checked {
-  background: #0284c7;
-  border-color: #7dd3fc;
-  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.2);
-}
-
-.menu-option-check:checked::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #e0f2fe;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.selected-item-remove:hover {
+  background: rgba(239, 68, 68, 0.35);
 }
 
 .qty-inline {

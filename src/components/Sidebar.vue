@@ -1,6 +1,8 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Squares2X2Icon, ShoppingCartIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftEndOnRectangleIcon } from '@heroicons/vue/24/outline'
 
 const isSidebarOpen = ref(true)
 const isMobile = ref(false)
@@ -8,8 +10,8 @@ const route = useRoute()
 const router = useRouter()
 
 const menus = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'DB', to: '/dashboard' },
-  { id: 'order', label: 'Order', icon: 'OR', to: '/order-admin' },
+  { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/dashboard' },
+  { id: 'order', label: 'Order', icon: ShoppingCartIcon, to: '/order-admin' },
 ]
 
 const selectMenu = () => {
@@ -20,9 +22,20 @@ const selectMenu = () => {
 
 const isActive = (path) => route.path === path
 
-const logout = () => {
+const logout = async () => {
+  const token = localStorage.getItem('token')
+
+  try {
+    await fetch('/auth/logout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch {
+    // tetap lanjut logout meskipun request gagal
+  }
+
+  localStorage.removeItem('token')
   localStorage.removeItem('userRole')
-  localStorage.removeItem('isLoggedIn')
   isSidebarOpen.value = false
   router.push('/login')
 }
@@ -71,13 +84,16 @@ onBeforeUnmount(() => {
             :to="menu.to"
             @click="selectMenu"
           >
-            <span class="menu-icon">{{ menu.icon }}</span>
+            <span class="menu-icon">
+              <component :is="menu.icon" class="icon" />
+            </span>
             <span>{{ menu.label }}</span>
           </RouterLink>
         </li>
       </ul>
 
       <button class="logout-btn" type="button" @click="logout">
+        <ArrowLeftEndOnRectangleIcon class="icon" />
         Logout
       </button>
     </aside>
@@ -97,33 +113,36 @@ onBeforeUnmount(() => {
   z-index: 20;
   border: 0;
   border-radius: 999px;
-  background: #111827;
-  color: #f9fafb;
+  background: #ffffff;
+  color: #1e293b;
   padding: 10px 14px;
   font-size: 13px;
   cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.55);
+  background: rgba(0, 0, 0, 0.25);
   z-index: 8;
 }
 
 .sidebar {
   width: 270px;
   min-height: 100vh;
-  background: linear-gradient(180deg, #0f172a 0%, #111827 45%, #1e293b 100%);
-  color: #f8fafc;
+  background: #ffffff;
+  color: #1e293b;
   padding: 24px 18px;
   position: fixed;
   top: 0;
   left: 0;
-  border-right: 1px solid rgba(148, 163, 184, 0.18);
+  border-right: 1px solid #e2e8f0;
   z-index: 10;
   transform: translateX(-100%);
   transition: transform 0.24s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar.open {
@@ -135,7 +154,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
   padding: 10px 10px 20px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .brand-badge {
@@ -143,7 +162,7 @@ onBeforeUnmount(() => {
   height: 40px;
   border-radius: 12px;
   background: linear-gradient(145deg, #22c55e, #16a34a);
-  color: #052e16;
+  color: #ffffff;
   font-weight: 700;
   font-size: 13px;
   display: grid;
@@ -154,12 +173,13 @@ onBeforeUnmount(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
+  color: #0f172a;
 }
 
 .brand-subtitle {
   margin: 3px 0 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .menu-list {
@@ -174,7 +194,7 @@ onBeforeUnmount(() => {
   width: 100%;
   border-radius: 12px;
   background: transparent;
-  color: #cbd5e1;
+  color: #475569;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -186,30 +206,36 @@ onBeforeUnmount(() => {
 }
 
 .menu-item:hover {
-  background: rgba(51, 65, 85, 0.55);
-  color: #ffffff;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .menu-item.active {
-  background: rgba(34, 197, 94, 0.2);
-  color: #dcfce7;
+  background: #dcfce7;
+  color: #166534;
 }
 
 .menu-item.active .menu-icon {
   background: #22c55e;
-  color: #052e16;
+  color: #ffffff;
 }
 
 .menu-icon {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: rgba(100, 116, 139, 0.24);
+  background: #f1f5f9;
   display: grid;
   place-items: center;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.4px;
+  color: #64748b;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
 }
 
 .logout-btn {
@@ -222,13 +248,16 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  background: rgba(239, 68, 68, 0.16);
-  color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   transition: background 0.2s ease;
 }
 
 .logout-btn:hover {
-  background: rgba(239, 68, 68, 0.24);
+  background: #fee2e2;
 }
 
 @media (max-width: 900px) {
@@ -237,7 +266,7 @@ onBeforeUnmount(() => {
   }
 
   .sidebar {
-    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   }
 }
 </style>

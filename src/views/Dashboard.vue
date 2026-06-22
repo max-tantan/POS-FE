@@ -163,7 +163,7 @@ const statusBadgeClass = (status) => {
       <div>
         <p class="eyebrow">Ringkasan Operasional</p>
         <h1>Dashboard</h1>
-        <p class="subtitle">Data dashboard hanya muncul dari CRUD di halaman Order.</p>
+        <p class="subtitle">Data dashboard.</p>
       </div>
       <p class="date-pill">{{ todayLabel }}</p>
     </header>
@@ -282,24 +282,25 @@ const statusBadgeClass = (status) => {
 .dashboard-page {
   display: grid;
   gap: 18px;
-  color: #e2e8f0;
+  color: #1e293b;
 }
 
 .dashboard-header {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   padding: 24px;
   display: flex;
   justify-content: space-between;
   gap: 20px;
   align-items: flex-start;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .eyebrow {
   margin: 0;
   font-size: 12px;
-  color: #86efac;
+  color: #22c55e;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 700;
@@ -308,20 +309,20 @@ const statusBadgeClass = (status) => {
 h1 {
   margin: 6px 0 0;
   font-size: 30px;
-  color: #f8fafc;
+  color: #0f172a;
 }
 
 .subtitle {
   margin: 6px 0 0;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .date-pill {
   margin: 0;
   border-radius: 999px;
-  background: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  color: #cbd5e1;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   padding: 10px 14px;
   font-size: 13px;
   white-space: nowrap;
@@ -334,21 +335,22 @@ h1 {
 }
 
 .kpi-card {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .kpi-label {
   margin: 0;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 13px;
 }
 
 .kpi-value {
   margin: 10px 0 0;
-  color: #f8fafc;
+  color: #0f172a;
   font-size: 28px;
   font-weight: 800;
   line-height: 1.1;
@@ -356,7 +358,7 @@ h1 {
 
 .kpi-meta {
   margin: 8px 0 0;
-  color: #64748b;
+  color: #94a3b8;
   font-size: 12px;
 }
 
@@ -373,10 +375,11 @@ h1 {
 }
 
 .panel {
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .panel-head {
@@ -388,14 +391,14 @@ h1 {
 
 .panel-head h2 {
   margin: 0;
-  color: #f8fafc;
+  color: #0f172a;
   font-size: 16px;
 }
 
 .panel-head p {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .bar-chart {
@@ -417,7 +420,7 @@ h1 {
   border-radius: 10px;
   display: flex;
   align-items: flex-end;
-  background: rgba(30, 41, 59, 0.75);
+  background: #f1f5f9;
   overflow: hidden;
 }
 
@@ -431,13 +434,13 @@ h1 {
 .bar-value {
   margin: 0;
   text-align: center;
-  color: #cbd5e1;
+  color: #475569;
   font-size: 11px;
 }
 
 .bar-label {
   margin: 0;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 12px;
   font-weight: 600;
 }
@@ -457,7 +460,7 @@ h1 {
   align-items: center;
   gap: 10px;
   border-radius: 12px;
-  background: rgba(30, 41, 59, 0.7);
+  background: #f8fafc;
   padding: 10px 12px;
 }
 
@@ -470,11 +473,11 @@ h1 {
 .status-item p {
   margin: 0;
   font-size: 13px;
-  color: #cbd5e1;
+  color: #475569;
 }
 
 .status-item strong {
-  color: #f8fafc;
+  color: #0f172a;
   font-size: 14px;
 }
 
@@ -484,7 +487,7 @@ h1 {
   align-items: center;
   gap: 12px;
   border-radius: 12px;
-  background: rgba(30, 41, 59, 0.7);
+  background: #f8fafc;
   padding: 12px;
 }
 
@@ -492,8 +495,8 @@ h1 {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: rgba(34, 197, 94, 0.24);
-  color: #86efac;
+  background: #dcfce7;
+  color: #166534;
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -503,12 +506,12 @@ h1 {
 .rank-title {
   margin: 0;
   font-size: 13px;
-  color: #f1f5f9;
+  color: #0f172a;
 }
 
 .rank-sub {
   margin: 3px 0 0;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -527,16 +530,16 @@ h1 {
   padding: 10px;
   text-align: left;
   font-size: 13px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .order-table th {
-  color: #94a3b8;
+  color: #64748b;
   font-weight: 600;
 }
 
 .order-table td {
-  color: #e2e8f0;
+  color: #1e293b;
 }
 
 .badge {
@@ -549,23 +552,23 @@ h1 {
 }
 
 .badge.processing {
-  background: rgba(59, 130, 246, 0.2);
-  color: #bfdbfe;
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .badge.shipped {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fde68a;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .badge.completed {
-  background: rgba(34, 197, 94, 0.2);
-  color: #bbf7d0;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .badge.cancelled {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fecaca;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .empty {
@@ -576,7 +579,7 @@ h1 {
 
 .empty-hint {
   margin: 0;
-  color: #86efac;
+  color: #22c55e;
   font-size: 13px;
 }
 
