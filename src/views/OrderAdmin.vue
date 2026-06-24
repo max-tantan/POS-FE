@@ -482,17 +482,19 @@ const createProduct = async () => {
       body: formData
     })
 
+    const resData = await res.json()
+
     if (!res.ok) {
-      const err = await res.json()
-      productFormError.value = err.message || 'Gagal menyimpan produk.'
+      productFormError.value = resData.message || 'Gagal menyimpan produk.'
       return
     }
+
+    menuOptions.value.push({ id: resData.data.id, name, type, price, image: productForm.image || '' })
   } catch {
     productFormError.value = 'Gagal terhubung ke server.'
     return
   }
 
-  menuOptions.value.push({ name, type, price, image: productForm.image || '' })
   selectedMenus.value = [...selectedMenus.value, name]
   menuQtyDraft[name] = 1
   resetProductForm()
@@ -633,7 +635,7 @@ const saveEditMenuOption = () => {
   editImageInputKey.value += 1
 }
 
-const removeMenuOption = (index) => {
+const removeMenuOption = async (index) => {
   if (!isAdmin.value) {
     return
   }
@@ -643,6 +645,20 @@ const removeMenuOption = (index) => {
   }
 
   const removed = menuOptions.value[index]
+
+  if (removed.id) {
+    try {
+      await fetch(`http://localhost:3000/produk/${removed.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+    } catch {
+      // Tetap hapus lokal walau API gagal
+    }
+  }
+
   menuOptions.value = menuOptions.value.filter((_, itemIndex) => itemIndex !== index)
 
   selectedMenus.value = selectedMenus.value.filter((name) => normalizeName(name) !== normalizeName(removed.name))
