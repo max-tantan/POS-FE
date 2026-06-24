@@ -240,14 +240,6 @@ const removeSelectedMenu = (menuName) => {
 
 const buildMenuSummary = (items) => items.map((item) => `${item.name} x${item.qty}`).join(', ')
 
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-    reader.onerror = () => reject(new Error('read_failed'))
-    reader.readAsDataURL(file)
-  })
-
 const searchedOrders = computed(() => {
   const keyword = searchQuery.value.trim().toLowerCase()
   if (!keyword) {
@@ -376,6 +368,7 @@ const resetProductForm = () => {
   productForm.type = productTypes[0]
   productForm.price = 10000
   productForm.image = ''
+  productForm.imageFile = null
   productFormError.value = ''
   productImageInputKey.value += 1
 }
@@ -402,7 +395,7 @@ const closeProductForm = () => {
   resetProductForm()
 }
 
-const createProduct = () => {
+const createProduct = async () => {
   if (!isAdmin.value) {
     return
   }
@@ -410,7 +403,6 @@ const createProduct = () => {
   const name = productForm.name.trim()
   const type = productForm.type
   const price = Number(productForm.price)
-  const image = productForm.image.trim()
   productFormError.value = ''
 
   if (!name) {
@@ -433,34 +425,59 @@ const createProduct = () => {
     return
   }
 
-  menuOptions.value.push({ name, type, price, image })
+  const formData = new FormData()
+  formData.append('nama_produk', name)
+  formData.append('jenis_produk', type)
+  formData.append('harga_produk', price)
+  if (productForm.imageFile) {
+    formData.append('foto_produk', productForm.imageFile)
+  }
+
+  try {
+    const res = await fetch('http://localhost:3000/produk', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      productFormError.value = err.message || 'Gagal menyimpan produk.'
+      return
+    }
+  } catch {
+    productFormError.value = 'Gagal terhubung ke server.'
+    return
+  }
+
+  menuOptions.value.push({ name, type, price, image: productForm.image || '' })
   selectedMenus.value = [...selectedMenus.value, name]
   menuQtyDraft[name] = 1
   resetProductForm()
 }
 
-const onProductImageChange = async (event) => {
+const onProductImageChange = (event) => {
   const file = event.target?.files?.[0]
   if (!file) {
     productForm.image = ''
+    productForm.imageFile = null
     productFormError.value = ''
     return
   }
 
   if (!file.type.startsWith('image/')) {
     productForm.image = ''
+    productForm.imageFile = null
     productFormError.value = 'File foto harus berupa gambar.'
     productImageInputKey.value += 1
     return
   }
 
-  try {
-    productForm.image = await readFileAsDataUrl(file)
-    productFormError.value = ''
-  } catch {
-    productFormError.value = 'Gagal membaca file foto.'
-    productImageInputKey.value += 1
-  }
+  productForm.imageFile = file
+  productForm.image = URL.createObjectURL(file)
+  productFormError.value = ''
 }
 
 const beginEditMenuOption = (index) => {
@@ -477,7 +494,7 @@ const beginEditMenuOption = (index) => {
   editImageInputKey.value += 1
 }
 
-const onEditImageChange = async (event) => {
+const onEditImageChange = (event) => {
   const file = event.target?.files?.[0]
   if (!file) {
     menuEditError.value = ''
@@ -491,14 +508,9 @@ const onEditImageChange = async (event) => {
     return
   }
 
-  try {
-    menuEditDraft.image = await readFileAsDataUrl(file)
-    menuEditError.value = ''
-  } catch {
-    menuEditDraft.image = ''
-    menuEditError.value = 'Gagal membaca file foto.'
-    editImageInputKey.value += 1
-  }
+  menuEditDraft.imageFile = file
+  menuEditDraft.image = URL.createObjectURL(file)
+  menuEditError.value = ''
 }
 
 const cancelEditMenuOption = () => {
@@ -602,7 +614,7 @@ const removeMenuOption = (index) => {
   }
 }
 
-const saveOrder = () => {
+const saveOrder = async () => {
   const customer = form.customer.trim()
   const orderItems = selectedMenuItems.value.map((item) => ({ ...item }))
   formError.value = ''
@@ -616,6 +628,35 @@ const saveOrder = () => {
   const totalQty = estimatedTotalQty.value
   const menuSummary = buildMenuSummary(orderItems)
   const actorLabel = isAdmin.value ? 'admin' : 'pelanggan'
+
+  const payload = {
+    nama_pelanggan: customer,
+    total_harga: totalAmount,
+    items: orderItems.map(item => ({
+      produk_id: item.name,
+      jumlah: item.qty
+    }))
+  }
+
+  try {
+    const res = await fetch('http://localhost:3000/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      formError.value = err.message || 'Gagal menyimpan order.'
+      return
+    }
+  } catch {
+    formError.value = 'Gagal terhubung ke server.'
+    return
+  }
 
   if (formMode.value === 'create') {
     const newOrder = {
