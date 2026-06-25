@@ -1,12 +1,6 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-
-import lunchImg from '../assets/lunch.jpeg'
-import coffeshopImg from '../assets/coffeshop.jpg'
-import nuggetsImg from "../assets/CRINITI'S _ KIDS NUGGETS CHIPS.jpeg"
-import matchaImg from '../assets/Matcha-Infused Cold Brew with Black Sesame Foam.jpeg'
-import marzipanImg from '../assets/Salted Marzipan Cold Brew with Cherry Essence.jpeg'
 
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
@@ -71,50 +65,60 @@ const menuEditError = ref('')
 const productImageInputKey = ref(0)
 const editImageInputKey = ref(0)
 
-const menuOptions = ref([
-  {
-    name: 'Telur Mata Sapi',
-    type: 'Makanan',
-    price: 12000,
-    image: lunchImg,
-  },
-  {
-    name: 'Nasi Anget',
-    type: 'Makanan',
-    price: 5000,
-    image: '',
-  },
-  {
-    name: 'Ayam Geprek jos jos',
-    type: 'Makanan',
-    price: 15000,
-    image: '',
-  },
-  {
-    name: 'Ayam Sayur',
-    type: 'Makanan',
-    price: 15000,
-    image: '',
-  },
-  {
-    name: 'Criniti Kids Nuggets',
-    type: 'Snack',
-    price: 25000,
-    image: nuggetsImg,
-  },
-  {
-    name: 'Matcha Cold Brew',
-    type: 'Minuman',
-    price: 35000,
-    image: matchaImg,
-  },
-  {
-    name: 'Salted Marzipan Cold Brew',
-    type: 'Minuman',
-    price: 38000,
-    image: marzipanImg,
+const menuOptions = ref([])
+
+const fetchProduk = async () => {
+  try {
+    const res = await fetch('/produk')
+    const resData = await res.json()
+    if (resData.status === 'success' && Array.isArray(resData.data)) {
+      menuOptions.value = resData.data.map(p => ({
+        id: p.id,
+        name: p.nama_produk,
+        type: p.jenis_produk,
+        price: Number(p.harga_produk),
+        image: p.foto_produk ? `/uploads/${p.foto_produk}` : '',
+      }))
+    }
+  } catch {
+    // fallback: biarkan menuOptions tetap array kosong
   }
-])
+}
+
+const fetchOrders = async () => {
+  try {
+    const res = await fetch('/orders', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+    if (res.ok) {
+      const resData = await res.json()
+      if (resData.status === 'success' && Array.isArray(resData.data)) {
+        const apiOrders = resData.data.map((o) => ({
+          id: o.id,
+          customer: o.nama_pelanggan,
+          menu: o.items ? o.items.map((i) => i.nama_produk || '').join(', ') : o.nama_produk || '',
+          qty: o.jumlah || (o.items ? o.items.reduce((s, i) => s + i.jumlah, 0) : 0),
+          items: o.items ? o.items.map((i) => ({ name: i.nama_produk || '', qty: i.jumlah, price: 0 })) : [],
+          totalAmount: Number(o.total_harga),
+          status: o.status_pesanan,
+          time: o.created_at ? new Date(o.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',
+          date: o.created_at ? o.created_at.slice(0, 10) : '',
+          timeline: [{ id: 1, text: 'Order dari server', meta: o.created_at ? new Date(o.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }) : '' }],
+        }))
+        const existingIds = new Set(orders.value.map((o) => o.id))
+        const merged = [...apiOrders.filter((o) => !existingIds.has(o.id)), ...orders.value]
+        orders.value = merged
+      }
+    }
+  } catch {
+    // fallback ke localStorage
+  }
+}
+
+onMounted(() => {
+  fetchProduk()
+  fetchOrders()
+})
 const customerOrderNumber = ref('')
 
 const productForm = reactive({
@@ -489,7 +493,7 @@ const createProduct = async () => {
       return
     }
 
-    menuOptions.value.push({ id: resData.data.id, name, type, price, image: productForm.image || '' })
+    menuOptions.value.push({ id: resData.data.id, name, type, price, image: resData.data.foto_produk ? `/uploads/${resData.data.foto_produk}` : '' })
   } catch {
     productFormError.value = 'Gagal terhubung ke server.'
     return
@@ -565,7 +569,7 @@ const cancelEditMenuOption = () => {
   editImageInputKey.value += 1
 }
 
-const saveEditMenuOption = () => {
+const saveEditMenuOption = async () => {
   if (!isAdmin.value) {
     return
   }
@@ -594,7 +598,24 @@ const saveEditMenuOption = () => {
   }
 
   const previousName = menuOptions.value[index].name
-  menuOptions.value[index] = { name, type, price, image }
+  const menuId = menuOptions.value[index].id
+
+  if (menuId) {
+    try {
+      await fetch(`http://localhost:3000/produk/${menuId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ nama_produk: name, harga_produk: price, jenis_produk: type })
+      })
+    } catch {
+      // tetap update lokal walau API gagal
+    }
+  }
+
+  menuOptions.value[index] = { ...menuOptions.value[index], name, type, price, image }
 
   if (selectedMenus.value.includes(previousName)) {
     selectedMenus.value = selectedMenus.value.map((item) => (item === previousName ? name : item))
@@ -694,6 +715,8 @@ const saveOrder = async () => {
     }))
   }
 
+  let apiOrderId = null
+
   try {
     const res = await fetch('http://localhost:3000/orders', {
       method: 'POST',
@@ -704,11 +727,14 @@ const saveOrder = async () => {
       body: JSON.stringify(payload)
     })
 
+    const resData = await res.json()
+
     if (!res.ok) {
-      const err = await res.json()
-      formError.value = err.message || 'Gagal menyimpan order.'
+      formError.value = resData.message || 'Gagal menyimpan order.'
       return
     }
+
+    apiOrderId = resData.data?.id
   } catch {
     formError.value = 'Gagal terhubung ke server.'
     return
@@ -716,7 +742,7 @@ const saveOrder = async () => {
 
   if (formMode.value === 'create') {
     const newOrder = {
-      id: `#ORD-${nextOrderNumber.value}`,
+      id: apiOrderId || `#ORD-${nextOrderNumber.value}`,
       customer,
       menu: menuSummary,
       qty: totalQty,
@@ -769,26 +795,44 @@ const saveOrder = async () => {
   openCreateForm()
 }
 
-const cancelOrder = (orderId) => {
+const cancelOrder = async (orderId) => {
   if (!isAdmin.value) {
     return
   }
 
-  orders.value = orders.value.map((order) => {
-    if (order.id !== orderId || order.status === 'Dibatalkan' || order.status === 'Selesai') {
-      return order
+  const order = orders.value.find((o) => o.id === orderId)
+  if (!order || order.status === 'Dibatalkan' || order.status === 'Selesai') {
+    return
+  }
+
+  try {
+    await fetch(`http://localhost:3000/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ status_pesanan: 'Dibatalkan' })
+    })
+  } catch {
+    // tetap update lokal walau API gagal
+  }
+
+  orders.value = orders.value.map((o) => {
+    if (o.id !== orderId) {
+      return o
     }
 
-    const nextTimelineId = (order.timeline.at(-1)?.id ?? 0) + 1
+    const nextTimelineId = (o.timeline.at(-1)?.id ?? 0) + 1
     return {
-      ...order,
+      ...o,
       status: 'Dibatalkan',
-      timeline: [...order.timeline, { id: nextTimelineId, text: 'Order dibatalkan admin', meta: getCurrentTimeLabel() }],
+      timeline: [...o.timeline, { id: nextTimelineId, text: 'Order dibatalkan admin', meta: getCurrentTimeLabel() }],
     }
   })
 }
 
-const advanceOrderStatus = (orderId) => {
+const advanceOrderStatus = async (orderId) => {
   if (!isAdmin.value) {
     return
   }
@@ -798,22 +842,47 @@ const advanceOrderStatus = (orderId) => {
     Dikirim: { next: 'Selesai', text: 'Order selesai' },
   }
 
-  orders.value = orders.value.map((order) => {
-    if (order.id !== orderId || !statusFlow[order.status]) {
-      return order
+  const order = orders.value.find((o) => o.id === orderId)
+  if (!order || !statusFlow[order.status]) {
+    return
+  }
+
+  const nextStatus = statusFlow[order.status].next
+
+  try {
+    await fetch(`http://localhost:3000/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ status_pesanan: nextStatus })
+    })
+  } catch {
+    // tetap update lokal walau API gagal
+  }
+
+  const { next, text } = statusFlow[order.status]
+  orders.value = orders.value.map((o) => {
+    if (o.id !== orderId) {
+      return o
     }
 
-    const nextTimelineId = (order.timeline.at(-1)?.id ?? 0) + 1
-    const { next, text } = statusFlow[order.status]
+    const nextTimelineId = (o.timeline.at(-1)?.id ?? 0) + 1
     return {
-      ...order,
+      ...o,
       status: next,
-      timeline: [...order.timeline, { id: nextTimelineId, text, meta: getCurrentTimeLabel() }],
+      timeline: [...o.timeline, { id: nextTimelineId, text, meta: getCurrentTimeLabel() }],
     }
   })
 }
 
-const deleteOrder = (orderId) => {
+const getDisplayId = (order) => {
+  const idx = filteredOrders.value.findIndex(o => o.id === order.id);
+  return `ORD-${idx + 1}`;
+}
+
+const deleteOrder = async (orderId) => {
   if (!isAdmin.value) {
     return
   }
@@ -825,6 +894,17 @@ const deleteOrder = (orderId) => {
 
   if (!window.confirm(`Hapus order ${order.id} milik ${order.customer}?`)) {
     return
+  }
+
+  try {
+    await fetch(`http://localhost:3000/orders/${orderId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+  } catch {
+    // tetap hapus lokal walau API gagal
   }
 
   orders.value = orders.value.filter((item) => item.id !== orderId)
@@ -908,13 +988,13 @@ resetForm()
             </thead>
             <tbody>
               <tr
-                v-for="order in filteredOrders"
+                v-for="(order, index) in filteredOrders"
                 :key="order.id"
                 class="row-click"
                 :class="{ selected: selectedOrder?.id === order.id }"
                 @click="selectedOrderId = order.id"
               >
-                <td class="order-id" data-label="ID Order">{{ order.id }}</td>
+                <td class="order-id" data-label="ID Order">ORD-{{ index + 1 }}</td>
                 <td data-label="Pelanggan">{{ order.customer }}</td>
                 <td class="menu-col" data-label="Menu">{{ order.menu }}</td>
                 <td data-label="Qty">{{ order.qty }}</td>
@@ -957,7 +1037,7 @@ resetForm()
       <aside class="side-panel">
         <section class="side-card highlight" v-if="selectedOrder">
           <p class="side-label">Order Dipilih</p>
-          <p class="side-big">{{ selectedOrder.id }}</p>
+          <p class="side-big">{{ getDisplayId(selectedOrder) }}</p>
           <p class="side-sub">
             {{ selectedOrder.customer }} • {{ selectedOrder.qty }} item • {{ formatRupiah(selectedOrder.totalAmount) }}
           </p>

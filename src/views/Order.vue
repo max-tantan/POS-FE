@@ -1,12 +1,6 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-
-import lunchImg from '../assets/lunch.jpeg'
-import coffeshopImg from '../assets/coffeshop.jpg'
-import nuggetsImg from "../assets/CRINITI'S _ KIDS NUGGETS CHIPS.jpeg"
-import matchaImg from '../assets/Matcha-Infused Cold Brew with Black Sesame Foam.jpeg'
-import marzipanImg from '../assets/Salted Marzipan Cold Brew with Cherry Essence.jpeg'
 
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
@@ -37,56 +31,27 @@ const menuEditError = ref('')
 const productImageInputKey = ref(0)
 const editImageInputKey = ref(0)
 
-const menuOptions = ref([
-  {
-    name: 'Telur Mata Sapi',
-    type: 'Makanan',
-    price: 12000,
-    image: lunchImg,
-  },
-  {
-    name: 'Jus Jeruk',
-    type: 'Minuman',
-    price: 10000,
-    image: coffeshopImg,
-  },
-  {
-    name: 'Nasi Anget',
-    type: 'Makanan',
-    price: 5000,
-    image: '',
-  },
-  {
-    name: 'Ayam Geprek jos jos',
-    type: 'Makanan',
-    price: 15000,
-    image: '',
-  },
-  {
-    name: 'Ayam Sayur',
-    type: 'Makanan',
-    price: 15000,
-    image: '',
-  },
-  {
-    name: 'Criniti Kids Nuggets',
-    type: 'Snack',
-    price: 25000,
-    image: nuggetsImg,
-  },
-  {
-    name: 'Matcha Cold Brew',
-    type: 'Minuman',
-    price: 35000,
-    image: matchaImg,
-  },
-  {
-    name: 'Salted Marzipan Cold Brew',
-    type: 'Minuman',
-    price: 38000,
-    image: marzipanImg,
+const menuOptions = ref([])
+
+const fetchProduk = async () => {
+  try {
+    const res = await fetch('/produk')
+    const resData = await res.json()
+    if (resData.status === 'success' && Array.isArray(resData.data)) {
+      menuOptions.value = resData.data.map(p => ({
+        id: p.id,
+        name: p.nama_produk,
+        type: p.jenis_produk,
+        price: Number(p.harga_produk),
+        image: p.foto_produk ? `/uploads/${p.foto_produk}` : '',
+      }))
+    }
+  } catch {
+    // fallback: biarkan menuOptions tetap array kosong
   }
-])
+}
+
+onMounted(fetchProduk)
 const customerOrderNumber = ref('')
 
 const productForm = reactive({
@@ -447,12 +412,13 @@ const createProduct = async () => {
       productFormError.value = err.message || 'Gagal menyimpan produk.'
       return
     }
+
+    const resData = await res.json()
+    menuOptions.value.push({ id: resData.data.id, name, type, price, image: resData.data.foto_produk ? `/uploads/${resData.data.foto_produk}` : '' })
   } catch {
     productFormError.value = 'Gagal terhubung ke server.'
     return
   }
-
-  menuOptions.value.push({ name, type, price, image: productForm.image || '' })
   selectedMenus.value = [...selectedMenus.value, name]
   menuQtyDraft[name] = 1
   resetProductForm()
@@ -757,6 +723,11 @@ const advanceOrderStatus = (orderId) => {
   })
 }
 
+const getDisplayId = (order) => {
+  const idx = filteredOrders.value.findIndex(o => o.id === order.id);
+  return `ORD-${idx + 1}`;
+}
+
 const deleteOrder = (orderId) => {
   if (!isAdmin.value) {
     return
@@ -852,13 +823,13 @@ resetForm()
             </thead>
             <tbody>
               <tr
-                v-for="order in filteredOrders"
+                v-for="(order, index) in filteredOrders"
                 :key="order.id"
                 class="row-click"
                 :class="{ selected: selectedOrder?.id === order.id }"
                 @click="selectedOrderId = order.id"
               >
-                <td class="order-id">{{ order.id }}</td>
+                <td class="order-id">ORD-{{ index + 1 }}</td>
                 <td>{{ order.customer }}</td>
                 <td class="menu-col">{{ order.menu }}</td>
                 <td>{{ order.qty }}</td>
@@ -901,7 +872,7 @@ resetForm()
       <aside class="side-panel">
         <section class="side-card highlight" v-if="selectedOrder">
           <p class="side-label">Order Dipilih</p>
-          <p class="side-big">{{ selectedOrder.id }}</p>
+          <p class="side-big">{{ getDisplayId(selectedOrder) }}</p>
           <p class="side-sub">
             {{ selectedOrder.customer }} • {{ selectedOrder.qty }} item • {{ formatRupiah(selectedOrder.totalAmount) }}
           </p>

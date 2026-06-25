@@ -67,12 +67,6 @@ const submitLogin = async () => {
   }
 }
 
-const continueAsCustomer = () => {
-  localStorage.removeItem('token')
-  localStorage.setItem('userRole', 'customer')
-  error.value = ''
-  router.push('/order')
-}
 </script>
 
 <template>
@@ -91,9 +85,6 @@ const continueAsCustomer = () => {
       <p v-if="error" class="error-text">{{ error }}</p>
 
       <button type="submit" :disabled="loading">Masuk sebagai Admin</button>
-      <button type="button" class="btn-skip" @click="continueAsCustomer">
-        Lewati, lanjut sebagai pelanggan
-      </button>
     </form>
   </div>
   </section>
@@ -204,16 +195,5 @@ const continueAsCustomer = () => {
 
 .login-card button:hover {
   background: #16a34a;
-}
-
-.login-card .btn-skip {
-  margin-top: 8px;
-  background: #f1f5f9;
-  color: #475569;
-  transition: background 0.2s ease;
-}
-
-.login-card .btn-skip:hover {
-  background: #e2e8f0;
 }
 </style>

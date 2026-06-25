@@ -17,6 +17,47 @@ const formatRupiah = (value) =>
     maximumFractionDigits: 0,
   }).format(value)
 
+// --- API Summary ---
+const summary = ref(null)
+
+const fetchSummary = async () => {
+  try {
+    const res = await fetch('/dashboard/summary', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.status === 'success') {
+        summary.value = data.data.ringkasan
+      }
+    }
+  } catch {
+    // fallback ke localStorage jika API gagal
+  }
+}
+
+// --- API Charts ---
+const chartHarian = ref(null)
+const chartStatus = ref(null)
+
+const fetchCharts = async () => {
+  try {
+    const res = await fetch('/dashboard/charts', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.status === 'success') {
+        chartHarian.value = data.data.chart_harian
+        chartStatus.value = data.data.chart_status
+      }
+    }
+  } catch {
+    // fallback ke localStorage jika API gagal
+  }
+}
+
+// --- localStorage Orders (untuk chart & fallback) ---
 const readStoredOrders = () => {
   try {
     const raw = localStorage.getItem(ordersStorageKey)
@@ -37,6 +78,8 @@ const syncOrders = () => {
 }
 
 onMounted(() => {
+  fetchSummary()
+  fetchCharts()
   window.addEventListener('storage', syncOrders)
   window.addEventListener('focus', syncOrders)
 })
@@ -47,29 +90,43 @@ onBeforeUnmount(() => {
 })
 const hasOrders = computed(() => orders.value.length > 0)
 
-const statusBreakdown = computed(() => [
-  { label: 'Diproses', value: orders.value.filter((item) => item.status === 'Diproses').length, color: '#60a5fa' },
-  { label: 'Dikirim', value: orders.value.filter((item) => item.status === 'Dikirim').length, color: '#f59e0b' },
-  { label: 'Selesai', value: orders.value.filter((item) => item.status === 'Selesai').length, color: '#22c55e' },
-  { label: 'Dibatalkan', value: orders.value.filter((item) => item.status === 'Dibatalkan').length, color: '#ef4444' },
-])
-
-const totalRevenue = computed(() =>
-  orders.value.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0),
-)
-const totalOrders = computed(() => orders.value.length)
-const completionRate = computed(() => {
-  if (!totalOrders.value) {
-    return 0
+const statusBreakdown = computed(() => {
+  if (chartStatus.value) {
+    const colorMap = { Diproses: '#60a5fa', Dikirim: '#f59e0b', Selesai: '#22c55e', Dibatalkan: '#ef4444' }
+    return chartStatus.value.map((item) => ({
+      label: item.status_pesanan,
+      value: item.total,
+      color: colorMap[item.status_pesanan] || '#94a3b8',
+    }))
   }
-  const done = statusBreakdown.value.find((item) => item.label === 'Selesai')?.value ?? 0
-  return Math.round((done / totalOrders.value) * 100)
+  return [
+    { label: 'Diproses', value: orders.value.filter((item) => item.status === 'Diproses').length, color: '#60a5fa' },
+    { label: 'Dikirim', value: orders.value.filter((item) => item.status === 'Dikirim').length, color: '#f59e0b' },
+    { label: 'Selesai', value: orders.value.filter((item) => item.status === 'Selesai').length, color: '#22c55e' },
+    { label: 'Dibatalkan', value: orders.value.filter((item) => item.status === 'Dibatalkan').length, color: '#ef4444' },
+  ]
+})
+
+const totalRevenue = computed(() => {
+  if (summary.value) {
+    return (Number(summary.value.cash_omzet_awal) || 0) + (Number(summary.value.omzet_harian) || 0)
+  }
+  return orders.value.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0)
+})
+const totalOrders = computed(() => {
+  if (summary.value) return summary.value.total_order
+  return orders.value.length
+})
+const completionRate = computed(() => {
+  if (summary.value) return summary.value.persentase_selesai
+  if (!orders.value.length) return 0
+  const done = orders.value.filter((item) => item.status === 'Selesai').length
+  return Math.round((done / orders.value.length) * 100)
 })
 const avgTicket = computed(() => {
-  if (!totalOrders.value) {
-    return 0
-  }
-  return Math.round(totalRevenue.value / totalOrders.value)
+  if (summary.value) return summary.value.rata_rata_orderan
+  if (!orders.value.length) return 0
+  return Math.round(totalRevenue.value / orders.value.length)
 })
 
 const getLast7Days = () => {
@@ -89,6 +146,14 @@ const getLast7Days = () => {
 }
 
 const weeklyRevenue = computed(() => {
+  if (chartHarian.value) {
+    return chartHarian.value.map((item) => {
+      const date = new Date(item.tanggal + 'T00:00:00')
+      const day = date.toLocaleDateString('id-ID', { weekday: 'short' })
+      return { key: item.tanggal, day, amount: item.total_order }
+    })
+  }
+
   const dayMap = new Map(getLast7Days().map((item) => [item.key, { ...item, amount: 0 }]))
 
   orders.value.forEach((order) => {
@@ -258,8 +323,8 @@ const statusBadgeClass = (status) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="order in recentOrders" :key="order.id">
-                <td>{{ order.id }}</td>
+              <tr v-for="(order, index) in recentOrders" :key="order.id">
+                <td>ORD-{{ index + 1 }}</td>
                 <td>{{ order.customer }}</td>
                 <td>{{ formatRupiah(order.total) }}</td>
                 <td>

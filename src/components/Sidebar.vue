@@ -1,8 +1,9 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Squares2X2Icon, ShoppingCartIcon } from '@heroicons/vue/24/outline'
+import { Squares2X2Icon, ShoppingCartIcon, UsersIcon } from '@heroicons/vue/24/outline'
 import { ArrowLeftEndOnRectangleIcon } from '@heroicons/vue/24/outline'
+import cashierLogo from '../assets/cashier-svgrepo-com.svg'
 
 const isSidebarOpen = ref(true)
 const isMobile = ref(false)
@@ -12,6 +13,7 @@ const router = useRouter()
 const menus = [
   { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/dashboard' },
   { id: 'order', label: 'Order', icon: ShoppingCartIcon, to: '/order-admin' },
+  { id: 'users', label: 'Users', icon: UsersIcon, to: '/users' },
 ]
 
 const selectMenu = () => {
@@ -69,7 +71,7 @@ onBeforeUnmount(() => {
 
     <aside class="sidebar" :class="{ open: isSidebarOpen }">
       <div class="brand">
-        <div class="brand-badge">SP</div>
+        <img :src="cashierLogo" alt="Sarapan Telur" class="brand-badge" />
         <div>
           <p class="brand-title">Sarapan Telur</p>
           <p class="brand-subtitle">Admin Workspace</p>
@@ -161,12 +163,9 @@ onBeforeUnmount(() => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(145deg, #22c55e, #16a34a);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 13px;
-  display: grid;
-  place-items: center;
+  background: #22c55e;
+  padding: 6px;
+  object-fit: contain;
 }
 
 .brand-title {

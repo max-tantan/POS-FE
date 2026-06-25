@@ -3,6 +3,7 @@ import DashboardView from '../views/Dashboard.vue'
 import OrderAdminView from '../views/OrderAdmin.vue'
 import OrderCustomerView from '../views/OrderCustomer.vue'
 import LoginView from '../views/Login.vue'
+import UsersManagementView from '../views/UsersManagement.vue'
 
 const routes = [
   {
@@ -42,6 +43,15 @@ const routes = [
       requiresAdmin: true,
     },
   },
+  {
+    path: '/users',
+    name: 'users',
+    component: UsersManagementView,
+    meta: {
+      requiresAdmin: true,
+    },
+  },
+
 ]
 
 const router = createRouter({

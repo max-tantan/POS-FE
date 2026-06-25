@@ -1,12 +1,6 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-
-import lunchImg from '../assets/lunch.jpeg'
-import coffeshopImg from '../assets/coffeshop.jpg'
-import nuggetsImg from "../assets/CRINITI'S _ KIDS NUGGETS CHIPS.jpeg"
-import matchaImg from '../assets/Matcha-Infused Cold Brew with Black Sesame Foam.jpeg'
-import marzipanImg from '../assets/Salted Marzipan Cold Brew with Cherry Essence.jpeg'
 
 const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
@@ -71,50 +65,27 @@ const menuEditError = ref('')
 const productImageInputKey = ref(0)
 const editImageInputKey = ref(0)
 
-const menuOptions = ref([
-  {
-    name: 'Telur Mata Sapi',
-    type: 'Makanan',
-    price: 12000,
-    image: lunchImg,
-  },
-  {
-    name: 'Nasi Anget',
-    type: 'Makanan',
-    price: 5000,
-    image: '',
-  },
-  {
-    name: 'Ayam Geprek jos jos',
-    type: 'Makanan',
-    price: 15000,
-    image: '',
-  },
-  {
-    name: 'Ayam Sayur',
-    type: 'Makanan',
-    price: 15000,
-    image: '',
-  },
-  {
-    name: 'Criniti Kids Nuggets',
-    type: 'Snack',
-    price: 25000,
-    image: nuggetsImg,
-  },
-  {
-    name: 'Matcha Cold Brew',
-    type: 'Minuman',
-    price: 35000,
-    image: matchaImg,
-  },
-  {
-    name: 'Salted Marzipan Cold Brew',
-    type: 'Minuman',
-    price: 38000,
-    image: marzipanImg,
+const menuOptions = ref([])
+
+const fetchProduk = async () => {
+  try {
+    const res = await fetch('/produk')
+    const resData = await res.json()
+    if (resData.status === 'success' && Array.isArray(resData.data)) {
+      menuOptions.value = resData.data.map(p => ({
+        id: p.id,
+        name: p.nama_produk,
+        type: p.jenis_produk,
+        price: Number(p.harga_produk),
+        image: p.foto_produk ? `/uploads/${p.foto_produk}` : '',
+      }))
+    }
+  } catch {
+    // fallback: biarkan menuOptions tetap array kosong
   }
-])
+}
+
+onMounted(fetchProduk)
 const customerOrderNumber = ref('')
 
 const productForm = reactive({
@@ -651,6 +622,8 @@ const saveOrder = async () => {
     }))
   }
 
+  let apiOrderId = null
+
   try {
     const res = await fetch('http://localhost:3000/orders', {
       method: 'POST',
@@ -661,11 +634,14 @@ const saveOrder = async () => {
       body: JSON.stringify(payload)
     })
 
+    const resData = await res.json()
+
     if (!res.ok) {
-      const err = await res.json()
-      formError.value = err.message || 'Gagal menyimpan order.'
+      formError.value = resData.message || 'Gagal menyimpan order.'
       return
     }
+
+    apiOrderId = resData.data?.id
   } catch {
     formError.value = 'Gagal terhubung ke server.'
     return
@@ -673,7 +649,7 @@ const saveOrder = async () => {
 
   if (formMode.value === 'create') {
     const newOrder = {
-      id: `#ORD-${nextOrderNumber.value}`,
+      id: apiOrderId || `#ORD-${nextOrderNumber.value}`,
       customer,
       menu: menuSummary,
       qty: totalQty,
