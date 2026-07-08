@@ -13,7 +13,7 @@ watch(
   },
 )
 
-const showSidebar = computed(() => !route.meta.hideSidebar && currentRole.value === 'admin')
+const showSidebar = computed(() => !route.meta.hideSidebar && (currentRole.value === 'admin' || currentRole.value === 'kasir'))
 const noContentPadding = computed(() => Boolean(route.meta.hideSidebar))
 </script>
 

@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-const statusFilters = ['Semua', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
+const statusFilters = ['Semua', 'Proses', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan']
 const periodFilters = ['Semua', 'Hari Ini']
 const productTypes = ['Makanan', 'Minuman', 'Snack', 'Lainnya']
 const activeProductType = ref('Semua')
@@ -14,7 +14,6 @@ const ordersStorageKey = 'sarapantelur.orders'
 const nextOrderStorageKey = 'sarapantelur.nextOrderNumber'
 const today = new Date().toISOString().slice(0, 10)
 const isAdmin = computed(() => false)
-const isCustomer = computed(() => true)
 const router = useRouter()
 
 const parseStoredOrders = () => {
@@ -78,6 +77,7 @@ const fetchProduk = async () => {
         type: p.jenis_produk,
         price: Number(p.harga_produk),
         image: p.foto_produk ? `/uploads/${p.foto_produk}` : '',
+        stok: Number(p.stok) || 0,
       }))
     }
   } catch {
@@ -127,6 +127,7 @@ const getCurrentTimeLabel = () =>
 
 const statusClass = (status) => {
   const map = {
+    Proses: 'processing',
     Diproses: 'processing',
     Dikirim: 'shipped',
     Selesai: 'completed',
@@ -149,6 +150,7 @@ const selectedMenuItems = computed(() =>
 
       const qty = Math.max(1, Number(menuQtyDraft[menuName]) || 1)
       return {
+        id: option.id,
         name: option.name,
         price: option.price,
         qty,
@@ -267,7 +269,7 @@ const stats = computed(() => {
   const source = filteredOrders.value
   return [
     { id: 'total', label: 'Total Order', value: source.length },
-    { id: 'ongoing', label: 'Sedang Diproses', value: source.filter((item) => item.status === 'Diproses').length },
+    { id: 'ongoing', label: 'Sedang Diproses', value: source.filter((item) => item.status === 'Proses' || item.status === 'Diproses').length },
     { id: 'shipped', label: 'Dalam Pengiriman', value: source.filter((item) => item.status === 'Dikirim').length },
     { id: 'completed', label: 'Selesai', value: source.filter((item) => item.status === 'Selesai').length },
   ]
@@ -617,7 +619,7 @@ const saveOrder = async () => {
     nama_pelanggan: customer,
     total_harga: totalAmount,
     items: orderItems.map(item => ({
-      produk_id: item.name,
+      produk_id: item.id,
       jumlah: item.qty
     }))
   }
@@ -664,14 +666,8 @@ const saveOrder = async () => {
     nextOrderNumber.value += 1
     orders.value = [newOrder, ...orders.value]
 
-    if (isCustomer.value) {
-      customerOrderNumber.value = newOrder.id
-      resetForm()
-      return
-    }
-
-    selectedOrderId.value = newOrder.id
-    openCreateForm()
+    customerOrderNumber.value = newOrder.id
+    resetForm()
     return
   }
 
@@ -727,6 +723,7 @@ const advanceOrderStatus = (orderId) => {
   }
 
   const statusFlow = {
+    Proses: { next: 'Diproses', text: 'Order mulai diproses' },
     Diproses: { next: 'Dikirim', text: 'Order masuk pengiriman' },
     Dikirim: { next: 'Selesai', text: 'Order selesai' },
   }
@@ -766,12 +763,6 @@ const deleteOrder = (orderId) => {
   }
 }
 
-const switchToAdmin = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userRole')
-  router.push('/login')
-}
-
 resetForm()
 </script>
 
@@ -785,50 +776,9 @@ resetForm()
           {{ isAdmin ? 'Kelola order ubah status, edit, dan monitor timeline.' : 'Pilih menu, isi qty, lalu buat pesanan.' }}
         </p>
       </div>
-      <div class="header-actions">
-        <button v-if="isAdmin" type="button" class="btn btn-primary" @click="openProductForm">
-          Tambah Produk
-        </button>
-        <button v-if="isCustomer" type="button" class="btn btn-soft" @click="switchToAdmin">
-          Masuk sebagai admin
-        </button>
-      </div>
     </header>
 
     <div class="customer-content">
-      <section class="customer-card">
-        <div class="customer-card-header">
-          <div>
-            <h2>Menu Hari Ini</h2>
-            <p class="customer-note">Pilih menu favorit kamu, lalu isi form pesanan di bawah.</p>
-          </div>
-          <div class="product-type-tabs">
-            <button
-              v-for="type in ['Semua', ...productTypes]"
-              :key="type"
-              class="btn btn-soft xsmall"
-              :class="{ active: activeProductType === type }"
-              @click="activeProductType = type"
-            >{{ type }}</button>
-          </div>
-        </div>
-        <div class="menu-gallery">
-          <article v-for="menu in filteredMenuOptions" :key="menu.name" class="menu-card">
-            <img
-              :src="menu.image || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=80'"
-              :alt="menu.name"
-            />
-            <div class="menu-card-body">
-              <div>
-                <p class="menu-name">{{ menu.name }}</p>
-                <p class="menu-type">{{ menu.type || 'Lainnya' }}</p>
-              </div>
-              <p class="menu-price">{{ formatRupiah(menu.price) }}</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
       <section class="customer-card">
         <h2>Form Pesanan</h2>
         <form class="order-form" @submit.prevent="saveOrder">
@@ -855,9 +805,9 @@ resetForm()
                 v-for="option in filteredMenuOptions"
                 :key="option.name"
                 class="menu-option-card"
-                :class="{ selected: selectedMenus.includes(option.name) }"
+                :class="{ selected: selectedMenus.includes(option.name), 'stok-habis': option.stok === 0 }"
               >
-                <div class="menu-option-img-wrap" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
+                <div class="menu-option-img-wrap" @click="option.stok > 0 && toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
                   <img
                     v-if="option.image"
                     class="menu-option-img"
@@ -871,10 +821,13 @@ resetForm()
                     <span class="check-icon">✓</span>
                   </div>
                 </div>
-                <div class="menu-option-body" @click="toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
+                <div class="menu-option-body" @click="option.stok > 0 && toggleMenuSelection(option.name, !selectedMenus.includes(option.name))">
                   <p class="menu-option-name">{{ option.name }}</p>
                   <p class="menu-option-type">{{ option.type || 'Lainnya' }}</p>
                   <p class="menu-option-price">{{ formatRupiah(option.price) }}</p>
+                  <p class="menu-option-stok" :class="{ 'stok-menipis': option.stok > 0 && option.stok <= 5, 'stok-kosong': option.stok === 0 }">
+                    Stok: {{ option.stok }}
+                  </p>
                 </div>
                 <div v-if="selectedMenus.includes(option.name)" class="menu-option-qty">
                   <button class="qty-btn qty-minus" @click.stop="decrementQty(option.name)">−</button>
@@ -1091,74 +1044,6 @@ h1 {
   border-radius: 18px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-.customer-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.customer-note {
-  margin: -4px 0 14px;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.menu-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px;
-}
-
-.menu-card {
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.menu-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-}
-
-.menu-card img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  display: block;
-}
-
-.menu-card-body {
-  padding: 12px;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: flex-start;
-}
-
-.menu-name {
-  margin: 0;
-  color: #1e293b;
-  font-weight: 600;
-}
-
-.menu-type {
-  margin: 2px 0 0;
-  color: #94a3b8;
-  font-size: 12px;
-}
-
-.menu-price {
-  margin: 0;
-  color: #22c55e;
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .table-card,
@@ -1434,6 +1319,26 @@ h2 {
 .menu-option-card.selected {
   border-color: #22c55e;
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15), 0 4px 14px rgba(0,0,0,0.06);
+}
+
+.menu-option-card.stok-habis {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.menu-option-stok {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.menu-option-stok.stok-menipis {
+  color: #f59e0b;
+}
+
+.menu-option-stok.stok-kosong {
+  color: #ef4444;
 }
 
 .menu-option-img-wrap {
@@ -1898,9 +1803,6 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .menu-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 700px) {

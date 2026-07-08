@@ -61,9 +61,6 @@ const editingOrderId = ref(null)
 const formError = ref('')
 const showProductForm = ref(false)
 const productFormError = ref('')
-const menuEditError = ref('')
-const productImageInputKey = ref(0)
-const editImageInputKey = ref(0)
 
 const menuOptions = ref([])
 
@@ -125,7 +122,6 @@ const productForm = reactive({
   name: '',
   type: productTypes[0],
   price: 10000,
-  image: '',
 })
 
 const menuEditIndex = ref(null)
@@ -133,7 +129,6 @@ const menuEditDraft = reactive({
   name: '',
   type: productTypes[0],
   price: 0,
-  image: '',
 })
 
 const form = reactive({
@@ -182,6 +177,7 @@ const selectedMenuItems = computed(() =>
 
       const qty = Math.max(1, Number(menuQtyDraft[menuName]) || 1)
       return {
+        id: option.id,
         name: option.name,
         price: option.price,
         qty,
@@ -411,10 +407,7 @@ const resetProductForm = () => {
   productForm.name = 'Produk Baru'
   productForm.type = productTypes[0]
   productForm.price = 10000
-  productForm.image = ''
-  productForm.imageFile = null
   productFormError.value = ''
-  productImageInputKey.value += 1
 }
 
 const openProductForm = () => {
@@ -427,9 +420,7 @@ const openProductForm = () => {
   menuEditDraft.name = ''
   menuEditDraft.type = productTypes[0]
   menuEditDraft.price = 0
-  menuEditDraft.image = ''
   menuEditError.value = ''
-  editImageInputKey.value += 1
   resetProductForm()
 }
 
@@ -469,21 +460,14 @@ const createProduct = async () => {
     return
   }
 
-  const formData = new FormData()
-  formData.append('nama_produk', name)
-  formData.append('jenis_produk', type)
-  formData.append('harga_produk', price)
-  if (productForm.imageFile) {
-    formData.append('foto_produk', productForm.imageFile)
-  }
-
   try {
     const res = await fetch('http://localhost:3000/produk', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
-      body: formData
+      body: JSON.stringify({ nama_produk: name, jenis_produk: type, harga_produk: price })
     })
 
     const resData = await res.json()
@@ -493,7 +477,7 @@ const createProduct = async () => {
       return
     }
 
-    menuOptions.value.push({ id: resData.data.id, name, type, price, image: resData.data.foto_produk ? `/uploads/${resData.data.foto_produk}` : '' })
+    menuOptions.value.push({ id: resData.data.id, name, type, price })
   } catch {
     productFormError.value = 'Gagal terhubung ke server.'
     return
@@ -502,28 +486,6 @@ const createProduct = async () => {
   selectedMenus.value = [...selectedMenus.value, name]
   menuQtyDraft[name] = 1
   resetProductForm()
-}
-
-const onProductImageChange = (event) => {
-  const file = event.target?.files?.[0]
-  if (!file) {
-    productForm.image = ''
-    productForm.imageFile = null
-    productFormError.value = ''
-    return
-  }
-
-  if (!file.type.startsWith('image/')) {
-    productForm.image = ''
-    productForm.imageFile = null
-    productFormError.value = 'File foto harus berupa gambar.'
-    productImageInputKey.value += 1
-    return
-  }
-
-  productForm.imageFile = file
-  productForm.image = URL.createObjectURL(file)
-  productFormError.value = ''
 }
 
 const beginEditMenuOption = (index) => {
@@ -535,27 +497,6 @@ const beginEditMenuOption = (index) => {
   menuEditDraft.name = menuOptions.value[index].name
   menuEditDraft.type = menuOptions.value[index].type || productTypes[0]
   menuEditDraft.price = menuOptions.value[index].price
-  menuEditDraft.image = menuOptions.value[index].image || ''
-  menuEditError.value = ''
-  editImageInputKey.value += 1
-}
-
-const onEditImageChange = (event) => {
-  const file = event.target?.files?.[0]
-  if (!file) {
-    menuEditError.value = ''
-    return
-  }
-
-  if (!file.type.startsWith('image/')) {
-    menuEditDraft.image = ''
-    menuEditError.value = 'File foto harus berupa gambar.'
-    editImageInputKey.value += 1
-    return
-  }
-
-  menuEditDraft.imageFile = file
-  menuEditDraft.image = URL.createObjectURL(file)
   menuEditError.value = ''
 }
 
@@ -564,9 +505,7 @@ const cancelEditMenuOption = () => {
   menuEditDraft.name = ''
   menuEditDraft.type = productTypes[0]
   menuEditDraft.price = 0
-  menuEditDraft.image = ''
   menuEditError.value = ''
-  editImageInputKey.value += 1
 }
 
 const saveEditMenuOption = async () => {
@@ -615,7 +554,7 @@ const saveEditMenuOption = async () => {
     }
   }
 
-  menuOptions.value[index] = { ...menuOptions.value[index], name, type, price, image }
+  menuOptions.value[index] = { ...menuOptions.value[index], name, type, price }
 
   if (selectedMenus.value.includes(previousName)) {
     selectedMenus.value = selectedMenus.value.map((item) => (item === previousName ? name : item))
@@ -651,9 +590,7 @@ const saveEditMenuOption = async () => {
   menuEditDraft.name = ''
   menuEditDraft.type = productTypes[0]
   menuEditDraft.price = 0
-  menuEditDraft.image = ''
   menuEditError.value = ''
-  editImageInputKey.value += 1
 }
 
 const removeMenuOption = async (index) => {
@@ -710,7 +647,7 @@ const saveOrder = async () => {
     nama_pelanggan: customer,
     total_harga: totalAmount,
     items: orderItems.map(item => ({
-      produk_id: item.name,
+      produk_id: item.id,
       jumlah: item.qty
     }))
   }
@@ -1201,13 +1138,6 @@ resetForm()
             Harga Produk
             <input v-model.number="productForm.price" type="number" min="1000" />
           </label>
-          <label>
-            Foto Produk
-            <input :key="productImageInputKey" class="product-image-input" type="file" accept="image/*" @change="onProductImageChange" />
-          </label>
-          <div v-if="productForm.image" class="product-image-preview">
-            <img :src="productForm.image" alt="Preview foto produk" />
-          </div>
           <p v-if="productFormError" class="form-error">{{ productFormError }}</p>
           <div class="form-actions">
             <button type="button" class="btn btn-soft" @click="resetProductForm">Reset</button>
@@ -1234,10 +1164,6 @@ resetForm()
                 <option v-for="type in productTypes" :key="`edit-${type}`" :value="type">{{ type }}</option>
               </select>
               <input v-model.number="menuEditDraft.price" type="number" min="1000" />
-              <input :key="editImageInputKey" class="product-image-input" type="file" accept="image/*" @change="onEditImageChange" />
-              <div v-if="menuEditDraft.image" class="product-image-preview product-image-preview-small">
-                <img :src="menuEditDraft.image" alt="Preview foto edit produk" />
-              </div>
               <p v-if="menuEditError" class="form-error product-edit-error">{{ menuEditError }}</p>
               <div class="menu-option-actions">
                 <button type="button" class="btn btn-success xsmall" @click="saveEditMenuOption">Simpan</button>

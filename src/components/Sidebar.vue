@@ -1,7 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Squares2X2Icon, ShoppingCartIcon, UsersIcon } from '@heroicons/vue/24/outline'
+import { Squares2X2Icon, ShoppingCartIcon, UsersIcon, CubeIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline'
 import { ArrowLeftEndOnRectangleIcon } from '@heroicons/vue/24/outline'
 import cashierLogo from '../assets/cashier-svgrepo-com.svg'
 
@@ -10,11 +10,16 @@ const isMobile = ref(false)
 const route = useRoute()
 const router = useRouter()
 
+const role = localStorage.getItem('userRole')
+
 const menus = [
-  { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/dashboard' },
-  { id: 'order', label: 'Order', icon: ShoppingCartIcon, to: '/order-admin' },
-  { id: 'users', label: 'Users', icon: UsersIcon, to: '/users' },
-]
+  { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/dashboard', roles: ['admin'] },
+  { id: 'admin-produk', label: 'Produk', icon: CubeIcon, to: '/admin-produk', roles: ['admin'] },
+  { id: 'produk', label: 'Produk', icon: CubeIcon, to: '/produk', roles: ['kasir', 'customer'] },
+  { id: 'order', label: 'Buat Pesanan', icon: ShoppingCartIcon, to: '/order', roles: ['kasir', 'customer'] },
+  { id: 'order-manage', label: 'Status Pesanan', icon: ClipboardDocumentListIcon, to: '/order-manage', roles: ['kasir', 'customer'] },
+  { id: 'users', label: 'Users', icon: UsersIcon, to: '/users', roles: ['admin'] },
+].filter(m => m.roles.includes(role))
 
 const selectMenu = () => {
   if (isMobile.value) {

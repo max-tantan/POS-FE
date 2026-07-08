@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DashboardView from '../views/Dashboard.vue'
-import OrderAdminView from '../views/OrderAdmin.vue'
 import OrderCustomerView from '../views/OrderCustomer.vue'
+import OrderManageView from '../views/OrderManage.vue'
+import ProductListView from '../views/ProductList.vue'
+import AdminProdukView from '../views/AdminProduk.vue'
 import LoginView from '../views/Login.vue'
 import UsersManagementView from '../views/UsersManagement.vue'
 
@@ -28,6 +30,14 @@ const routes = [
     },
   },
   {
+    path: '/produk',
+    name: 'produk',
+    component: ProductListView,
+    meta: {
+      requiresCustomer: true,
+    },
+  },
+  {
     path: '/order',
     name: 'order',
     component: OrderCustomerView,
@@ -36,17 +46,25 @@ const routes = [
     },
   },
   {
-    path: '/order-admin',
-    name: 'order-admin',
-    component: OrderAdminView,
+    path: '/order-manage',
+    name: 'order-manage',
+    component: OrderManageView,
     meta: {
-      requiresAdmin: true,
+      requiresCustomer: true,
     },
   },
   {
     path: '/users',
     name: 'users',
     component: UsersManagementView,
+    meta: {
+      requiresAdmin: true,
+    },
+  },
+  {
+    path: '/admin-produk',
+    name: 'admin-produk',
+    component: AdminProdukView,
     meta: {
       requiresAdmin: true,
     },
@@ -64,20 +82,20 @@ const getStoredRole = () => {
   const role = localStorage.getItem('userRole')
 
   if (token && role === 'admin') return 'admin'
-  if (role === 'customer') return 'customer'
+  if (role === 'kasir' || role === 'customer') return 'kasir'
   return null
 }
 
 router.beforeEach((to) => {
   const role = getStoredRole()
-  const isAuthenticated = role === 'admin' || role === 'customer'
+  const isAuthenticated = role === 'admin' || role === 'kasir'
 
   if (to.path === '/') {
     if (role === 'admin') {
       return { name: 'dashboard' }
     }
 
-    if (role === 'customer') {
+    if (role === 'kasir') {
       return { name: 'order' }
     }
 
@@ -85,11 +103,11 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresAdmin && role !== 'admin') {
-    return role === 'customer' ? { name: 'order' } : { name: 'login' }
+    return role === 'kasir' ? { name: 'order' } : { name: 'login' }
   }
 
-  if (to.meta.requiresCustomer && role !== 'customer') {
-    return role === 'admin' ? { name: 'order-admin' } : { name: 'login' }
+  if (to.meta.requiresCustomer && role !== 'kasir') {
+    return role === 'admin' ? { name: 'dashboard' } : { name: 'login' }
   }
 
   if ((to.meta.requiresAdmin || to.meta.requiresCustomer) && !isAuthenticated) {

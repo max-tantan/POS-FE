@@ -19,6 +19,7 @@ const formatRupiah = (value) =>
 
 // --- API Summary ---
 const summary = ref(null)
+const recentOrdersApi = ref(null)
 
 const fetchSummary = async () => {
   try {
@@ -29,6 +30,12 @@ const fetchSummary = async () => {
       const data = await res.json()
       if (data.status === 'success') {
         summary.value = data.data.ringkasan
+        recentOrdersApi.value = (data.data.order_terbaru || []).map(o => ({
+          id: o.id,
+          customer: o.nama_pelanggan,
+          total: Number(o.total_harga) || 0,
+          status: o.status_pesanan,
+        }))
       }
     }
   } catch {
@@ -57,6 +64,25 @@ const fetchCharts = async () => {
   }
 }
 
+// --- API Top Menus ---
+const topMenusApi = ref(null)
+
+const fetchTopMenus = async () => {
+  try {
+    const res = await fetch('/dashboard/top-menus', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.status === 'success' && Array.isArray(data.data)) {
+        topMenusApi.value = data.data.map(m => ({ name: m.nama_produk, sold: m.total_terjual }))
+      }
+    }
+  } catch {
+    // fallback ke localStorage
+  }
+}
+
 // --- localStorage Orders (untuk chart & fallback) ---
 const readStoredOrders = () => {
   try {
@@ -80,6 +106,7 @@ const syncOrders = () => {
 onMounted(() => {
   fetchSummary()
   fetchCharts()
+  fetchTopMenus()
   window.addEventListener('storage', syncOrders)
   window.addEventListener('focus', syncOrders)
 })
@@ -146,15 +173,16 @@ const getLast7Days = () => {
 }
 
 const weeklyRevenue = computed(() => {
-  if (chartHarian.value) {
-    return chartHarian.value.map((item) => {
-      const date = new Date(item.tanggal + 'T00:00:00')
-      const day = date.toLocaleDateString('id-ID', { weekday: 'short' })
-      return { key: item.tanggal, day, amount: item.total_order }
-    })
-  }
-
   const dayMap = new Map(getLast7Days().map((item) => [item.key, { ...item, amount: 0 }]))
+
+  if (chartHarian.value) {
+    chartHarian.value.forEach((item) => {
+      if (dayMap.has(item.tanggal)) {
+        dayMap.get(item.tanggal).amount = Number(item.total_order) || 0
+      }
+    })
+    return [...dayMap.values()]
+  }
 
   orders.value.forEach((order) => {
     if (!dayMap.has(order.date)) {
@@ -172,6 +200,10 @@ const maxRevenue = computed(() => Math.max(...weeklyRevenue.value.map((item) => 
 const getBarHeight = (value) => `${Math.max(18, Math.round((value / maxRevenue.value) * 100))}%`
 
 const topMenus = computed(() => {
+  if (topMenusApi.value && topMenusApi.value.length) {
+    return topMenusApi.value
+  }
+
   const countByMenu = new Map()
 
   orders.value.forEach((order) => {
@@ -199,8 +231,11 @@ const topMenus = computed(() => {
     .slice(0, 5)
 })
 
-const recentOrders = computed(() =>
-  [...orders.value]
+const recentOrders = computed(() => {
+  if (recentOrdersApi.value && recentOrdersApi.value.length) {
+    return recentOrdersApi.value.slice(0, 6)
+  }
+  return [...orders.value]
     .sort((a, b) => String(b.id).localeCompare(String(a.id), undefined, { numeric: true }))
     .slice(0, 6)
     .map((item) => ({
@@ -208,8 +243,8 @@ const recentOrders = computed(() =>
       customer: item.customer,
       total: Number(item.totalAmount) || 0,
       status: item.status,
-    })),
-)
+    }))
+})
 
 const statusBadgeClass = (status) => {
   const map = {
