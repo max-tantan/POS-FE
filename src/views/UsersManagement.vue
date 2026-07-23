@@ -68,7 +68,7 @@ const saveUser = async () => {
     formError.value = 'Password wajib diisi'
     return
   }
-  if (!['admin', 'customer'].includes(role)) {
+  if (!['admin', 'kasir'].includes(role)) {
     formError.value = 'Role tidak valid'
     return
   }
@@ -161,7 +161,7 @@ onMounted(fetchUsers)
               <td data-label="ID">{{ user.id }}</td>
               <td data-label="Username">{{ user.username }}</td>
               <td data-label="Role">
-                <span class="badge" :class="user.role === 'admin' ? 'role-admin' : 'role-customer'">{{ user.role }}</span>
+                <span class="badge" :class="user.role === 'admin' ? 'role-admin' : 'role-kasir'">{{ user.role }}</span>
               </td>
               <td data-label="Aksi">
                 <button type="button" class="btn btn-danger xsmall" @click="confirmDelete(user)">Hapus</button>
@@ -191,7 +191,7 @@ onMounted(fetchUsers)
             Role
             <select v-model="form.role">
               <option value="admin">Admin</option>
-              <option value="customer">Customer</option>
+              <option value="kasir">Kasir</option>
             </select>
           </label>
           <p v-if="formError" class="form-error">{{ formError }}</p>
@@ -335,7 +335,7 @@ td {
   color: #1d4ed8;
 }
 
-.role-customer {
+.role-kasir {
   background: #fef3c7;
   color: #b45309;
 }

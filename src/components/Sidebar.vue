@@ -15,9 +15,9 @@ const role = localStorage.getItem('userRole')
 const menus = [
   { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, to: '/dashboard', roles: ['admin'] },
   { id: 'admin-produk', label: 'Produk', icon: CubeIcon, to: '/admin-produk', roles: ['admin'] },
-  { id: 'produk', label: 'Produk', icon: CubeIcon, to: '/produk', roles: ['kasir', 'customer'] },
-  { id: 'order', label: 'Buat Pesanan', icon: ShoppingCartIcon, to: '/order', roles: ['kasir', 'customer'] },
-  { id: 'order-manage', label: 'Status Pesanan', icon: ClipboardDocumentListIcon, to: '/order-manage', roles: ['kasir', 'customer'] },
+  { id: 'produk', label: 'Produk', icon: CubeIcon, to: '/produk', roles: ['kasir'] },
+  { id: 'order', label: 'Buat Pesanan', icon: ShoppingCartIcon, to: '/order', roles: ['kasir'] },
+  { id: 'order-manage', label: 'Status Pesanan', icon: ClipboardDocumentListIcon, to: '/order-manage', roles: ['kasir'] },
   { id: 'users', label: 'Users', icon: UsersIcon, to: '/users', roles: ['admin'] },
 ].filter(m => m.roles.includes(role))
 

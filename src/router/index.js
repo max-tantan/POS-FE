@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DashboardView from '../views/Dashboard.vue'
-import OrderCustomerView from '../views/OrderCustomer.vue'
+import OrderFormView from '../views/OrderForm.vue'
 import OrderManageView from '../views/OrderManage.vue'
 import ProductListView from '../views/ProductList.vue'
 import AdminProdukView from '../views/AdminProduk.vue'
@@ -34,15 +34,15 @@ const routes = [
     name: 'produk',
     component: ProductListView,
     meta: {
-      requiresCustomer: true,
+      requiresKasir: true,
     },
   },
   {
     path: '/order',
     name: 'order',
-    component: OrderCustomerView,
+    component: OrderFormView,
     meta: {
-      requiresCustomer: true,
+      requiresKasir: true,
     },
   },
   {
@@ -50,7 +50,7 @@ const routes = [
     name: 'order-manage',
     component: OrderManageView,
     meta: {
-      requiresCustomer: true,
+      requiresKasir: true,
     },
   },
   {
@@ -82,7 +82,7 @@ const getStoredRole = () => {
   const role = localStorage.getItem('userRole')
 
   if (token && role === 'admin') return 'admin'
-  if (role === 'kasir' || role === 'customer') return 'kasir'
+  if (role === 'kasir') return 'kasir'
   return null
 }
 
@@ -106,11 +106,11 @@ router.beforeEach((to) => {
     return role === 'kasir' ? { name: 'order' } : { name: 'login' }
   }
 
-  if (to.meta.requiresCustomer && role !== 'kasir') {
+  if (to.meta.requiresKasir && role !== 'kasir') {
     return role === 'admin' ? { name: 'dashboard' } : { name: 'login' }
   }
 
-  if ((to.meta.requiresAdmin || to.meta.requiresCustomer) && !isAuthenticated) {
+  if ((to.meta.requiresAdmin || to.meta.requiresKasir) && !isAuthenticated) {
     return { name: 'login' }
   }
 
