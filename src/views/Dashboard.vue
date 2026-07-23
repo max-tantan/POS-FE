@@ -382,12 +382,12 @@ const statusBadgeClass = (status) => {
 .dashboard-page {
   display: grid;
   gap: 18px;
-  color: #1e293b;
+  color: var(--clr-ink);
 }
 
 .dashboard-header {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
   border-radius: 20px;
   padding: 24px;
   display: flex;
@@ -400,7 +400,7 @@ const statusBadgeClass = (status) => {
 .eyebrow {
   margin: 0;
   font-size: 12px;
-  color: #22c55e;
+  color: var(--clr-green);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 700;
@@ -408,21 +408,23 @@ const statusBadgeClass = (status) => {
 
 h1 {
   margin: 6px 0 0;
+  font-family: var(--font-display);
   font-size: 30px;
-  color: #0f172a;
+  font-weight: 800;
+  color: var(--clr-heading);
 }
 
 .subtitle {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--clr-muted);
 }
 
 .date-pill {
   margin: 0;
   border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+  background: var(--clr-border-light);
+  border: 1px solid var(--clr-border);
+  color: var(--clr-muted);
   padding: 10px 14px;
   font-size: 13px;
   white-space: nowrap;
@@ -435,8 +437,8 @@ h1 {
 }
 
 .kpi-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
@@ -444,21 +446,22 @@ h1 {
 
 .kpi-label {
   margin: 0;
-  color: #64748b;
+  color: var(--clr-muted);
   font-size: 13px;
 }
 
 .kpi-value {
   margin: 10px 0 0;
-  color: #0f172a;
+  font-family: var(--font-mono);
+  color: var(--clr-heading);
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
 }
 
 .kpi-meta {
   margin: 8px 0 0;
-  color: #94a3b8;
+  color: var(--clr-subtle);
   font-size: 12px;
 }
 
@@ -475,8 +478,8 @@ h1 {
 }
 
 .panel {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
@@ -491,14 +494,16 @@ h1 {
 
 .panel-head h2 {
   margin: 0;
-  color: #0f172a;
+  font-family: var(--font-display);
+  color: var(--clr-heading);
   font-size: 16px;
+  font-weight: 700;
 }
 
 .panel-head p {
   margin: 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--clr-subtle);
 }
 
 .bar-chart {
@@ -520,7 +525,7 @@ h1 {
   border-radius: 10px;
   display: flex;
   align-items: flex-end;
-  background: #f1f5f9;
+  background: var(--clr-border-light);
   overflow: hidden;
 }
 
@@ -528,19 +533,20 @@ h1 {
   display: block;
   width: 100%;
   border-radius: 10px;
-  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(180deg, var(--clr-green) 0%, var(--clr-green-hover) 100%);
 }
 
 .bar-value {
   margin: 0;
   text-align: center;
-  color: #475569;
+  font-family: var(--font-mono);
+  color: var(--clr-muted);
   font-size: 11px;
 }
 
 .bar-label {
   margin: 0;
-  color: #64748b;
+  color: var(--clr-muted);
   font-size: 12px;
   font-weight: 600;
 }
@@ -560,7 +566,7 @@ h1 {
   align-items: center;
   gap: 10px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--clr-surface);
   padding: 10px 12px;
 }
 
@@ -573,11 +579,12 @@ h1 {
 .status-item p {
   margin: 0;
   font-size: 13px;
-  color: #475569;
+  color: var(--clr-muted);
 }
 
 .status-item strong {
-  color: #0f172a;
+  color: var(--clr-heading);
+  font-family: var(--font-mono);
   font-size: 14px;
 }
 
@@ -587,7 +594,7 @@ h1 {
   align-items: center;
   gap: 12px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--clr-surface);
   padding: 12px;
 }
 
@@ -595,10 +602,11 @@ h1 {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: #dcfce7;
-  color: #166534;
+  background: var(--clr-green-soft);
+  color: var(--clr-green-hover);
   display: grid;
   place-items: center;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 12px;
 }
@@ -606,12 +614,12 @@ h1 {
 .rank-title {
   margin: 0;
   font-size: 13px;
-  color: #0f172a;
+  color: var(--clr-heading);
 }
 
 .rank-sub {
   margin: 3px 0 0;
-  color: #64748b;
+  color: var(--clr-muted);
   font-size: 12px;
 }
 
@@ -630,16 +638,16 @@ h1 {
   padding: 10px;
   text-align: left;
   font-size: 13px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--clr-border-light);
 }
 
 .order-table th {
-  color: #64748b;
+  color: var(--clr-muted);
   font-weight: 600;
 }
 
 .order-table td {
-  color: #1e293b;
+  color: var(--clr-ink);
 }
 
 .badge {
@@ -662,24 +670,24 @@ h1 {
 }
 
 .badge.completed {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--clr-green-soft);
+  color: var(--clr-green-hover);
 }
 
 .badge.cancelled {
   background: #fee2e2;
-  color: #dc2626;
+  color: var(--clr-danger);
 }
 
 .empty {
   margin: 16px 0 0;
-  color: #94a3b8;
+  color: var(--clr-subtle);
   font-size: 13px;
 }
 
 .empty-hint {
   margin: 0;
-  color: #22c55e;
+  color: var(--clr-green);
   font-size: 13px;
 }
 

@@ -120,8 +120,8 @@ onBeforeUnmount(() => {
   z-index: 20;
   border: 0;
   border-radius: 999px;
-  background: #ffffff;
-  color: #1e293b;
+  background: var(--clr-card);
+  color: var(--clr-ink);
   padding: 10px 14px;
   font-size: 13px;
   cursor: pointer;
@@ -138,13 +138,13 @@ onBeforeUnmount(() => {
 .sidebar {
   width: 270px;
   min-height: 100vh;
-  background: #ffffff;
-  color: #1e293b;
+  background: var(--clr-card);
+  color: var(--clr-ink);
   padding: 24px 18px;
   position: fixed;
   top: 0;
   left: 0;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--clr-border);
   z-index: 10;
   transform: translateX(-100%);
   transition: transform 0.24s ease;
@@ -168,22 +168,23 @@ onBeforeUnmount(() => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #22c55e;
+  background: var(--clr-green);
   padding: 6px;
   object-fit: contain;
 }
 
 .brand-title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 800;
+  color: var(--clr-heading);
 }
 
 .brand-subtitle {
   margin: 3px 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--clr-muted);
 }
 
 .menu-list {
@@ -197,8 +198,9 @@ onBeforeUnmount(() => {
 .menu-item {
   width: 100%;
   border-radius: 12px;
+  border-left: 3px solid transparent;
   background: transparent;
-  color: #475569;
+  color: var(--clr-muted);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -206,35 +208,36 @@ onBeforeUnmount(() => {
   text-align: left;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .menu-item:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--clr-border-light);
+  color: var(--clr-heading);
 }
 
 .menu-item.active {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--clr-green-soft);
+  border-left-color: var(--clr-green);
+  color: var(--clr-green-hover);
 }
 
 .menu-item.active .menu-icon {
-  background: #22c55e;
-  color: #ffffff;
+  background: var(--clr-green);
+  color: var(--clr-card);
 }
 
 .menu-icon {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: #f1f5f9;
+  background: var(--clr-border-light);
   display: grid;
   place-items: center;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.4px;
-  color: #64748b;
+  color: var(--clr-muted);
 }
 
 .icon {
@@ -252,8 +255,8 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--clr-danger-soft);
+  color: var(--clr-danger);
   display: flex;
   align-items: center;
   gap: 10px;

@@ -1,3 +1,24 @@
+:root {
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --clr-green: #16a34a;
+  --clr-green-soft: #dcfce7;
+  --clr-green-hover: #15803d;
+  --clr-ink: #1e293b;
+  --clr-heading: #0f172a;
+  --clr-muted: #64748b;
+  --clr-subtle: #94a3b8;
+  --clr-border: #e2e8f0;
+  --clr-border-light: #f1f5f9;
+  --clr-surface: #f8fafc;
+  --clr-card: #ffffff;
+  --clr-danger: #dc2626;
+  --clr-danger-soft: #fef2f2;
+  --clr-warning: #f59e0b;
+  --clr-info: #2563eb;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -12,7 +33,17 @@ body,
 
 body {
   min-width: 320px;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: #f1f5f9;
-  color: #1e293b;
+  font-family: var(--font-body);
+  background: var(--clr-surface);
+  color: var(--clr-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

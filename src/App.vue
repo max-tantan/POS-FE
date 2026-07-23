@@ -37,7 +37,7 @@ const noContentPadding = computed(() => Boolean(route.meta.hideSidebar))
   margin-left: 270px;
   min-height: 100vh;
   padding: 24px;
-  background: #f1f5f9;
+  background: var(--clr-surface);
 }
 
 .app-content.full-width {

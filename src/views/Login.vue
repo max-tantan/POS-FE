@@ -95,7 +95,7 @@ const submitLogin = async () => {
   min-height: 100vh;
   display: grid;
   place-items: start;
-  background-color: #f1f5f9;
+  background-color: var(--clr-surface);
 }
 
 .login-wrapper {
@@ -114,7 +114,7 @@ const submitLogin = async () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #ffffff;
+  background: var(--clr-card);
   box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 10px 30px rgba(0,0,0,0.04);
   border-radius: 24px;
   gap: 10px;
@@ -122,60 +122,62 @@ const submitLogin = async () => {
 
 .login-card h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 28px;
-  color: #0f172a;
+  font-weight: 800;
+  color: var(--clr-heading);
   text-align: left;
 }
 
 .login-card .subtitle {
   margin: 0 0 18px;
-  color: #64748b;
+  color: var(--clr-muted);
   text-align: left;
 }
 
 .login-card label {
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: var(--clr-muted);
 }
 
 .login-card input {
   width: 100%;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--clr-border);
   border-radius: 50px;
   padding: 11px 12px;
   font-size: 14px;
-  color: #1e293b;
-  background-color: #f8fafc;
+  color: var(--clr-ink);
+  background-color: var(--clr-surface);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .login-card input:focus {
-  background-color: #ffffff;
+  background-color: var(--clr-card);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
-  border-color: #22c55e;
-  color: #1e293b;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+  border-color: var(--clr-green);
+  color: var(--clr-ink);
 }
 
 .login-card input::placeholder {
-  color: #94a3b8;
+  color: var(--clr-subtle);
 }
 
 .login-card input:-webkit-autofill,
 .login-card input:-webkit-autofill:hover,
 .login-card input:-webkit-autofill:focus,
 .login-card input:-webkit-autofill:active {
-  -webkit-text-fill-color: #1e293b;
-  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset;
-  box-shadow: 0 0 0 1000px #f8fafc inset;
-  caret-color: #1e293b;
+  -webkit-text-fill-color: var(--clr-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--clr-surface) inset;
+  box-shadow: 0 0 0 1000px var(--clr-surface) inset;
+  caret-color: var(--clr-ink);
   transition: background-color 5000s ease-in-out 0s;
 }
 
 .error-text {
   margin: 4px 0;
-  color: #dc2626;
+  color: var(--clr-danger);
   font-size: 13px;
 }
 
@@ -184,16 +186,17 @@ const submitLogin = async () => {
   border: 0;
   border-radius: 50px;
   padding: 12px;
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  background: #22c55e;
-  color: #ffffff;
+  background: var(--clr-green);
+  color: var(--clr-card);
   margin: 28px 0 0;
   transition: background 0.2s ease;
 }
 
 .login-card button:hover {
-  background: #16a34a;
+  background: var(--clr-green-hover);
 }
 </style>
